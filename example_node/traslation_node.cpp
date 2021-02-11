@@ -21,7 +21,6 @@
 #include "HEAR_ROS_BRIDGE/ROSUnit_UpdateControllerSrv.hpp"
 #include "HEAR_control/PIDController.hpp"
 //
-#include "HEAR_ROS_BRIDGE/ROSUnit_OrientationSubscriber.hpp"
 #include "HEAR_ROS_BRIDGE/ROSUnit_InfoSubscriber.hpp"
 #include "HEAR_ROS_BRIDGE/ROSUnit_Factory.hpp"
 #include "HEAR_ROS_BRIDGE/ROSUnit_RestNormSettingsClnt.hpp"

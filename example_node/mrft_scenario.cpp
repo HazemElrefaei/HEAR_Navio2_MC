@@ -20,14 +20,13 @@
 #include "HEAR_math/ConstantFloat.hpp"
 #include "HEAR_ROS_BRIDGE/ROSUnit_UpdateControllerSrv.hpp"
 #include "HEAR_control/PIDController.hpp"
-#include "HEAR_ROS_BRIDGE/ROSUnit_OrientationSubscriber.hpp"
 #include "HEAR_ROS_BRIDGE/ROSUnit_InfoSubscriber.hpp"
 #include "HEAR_ROS_BRIDGE/ROSUnit_Factory.hpp"
 #include "HEAR_ROS_BRIDGE/ROSUnit_RestNormSettingsClnt.hpp"
 #include "HEAR_ROS_BRIDGE/ROSUnit_ControlOutputSubscriber.hpp"
 
-//#define MRFT_ROLL_CHAN
-#define MRFT_PITCH_CHAN
+#define MRFT_ROLL_CHAN
+//#define MRFT_PITCH_CHAN
 //#define MRFT_Z_CHAN
 
 
@@ -127,7 +126,7 @@ int main(int argc, char** argv) {
     MissionElement* initial_pose_waypoint = new SetRelativeWaypoint(0., 0., 0., 0.); //TODO: SetRelativeWaypoint needs substantial refactoring
 
    
-    MissionElement* takeoff_relative_waypoint = new SetRelativeWaypoint(0., 0., 1.0, 0.);
+    MissionElement* takeoff_relative_waypoint = new SetRelativeWaypoint(0., 0., 1.2, 0.);
 
     MissionElement* land_relative_waypoint = new SetRelativeWaypoint(0., 0., -2., 0.);
 
