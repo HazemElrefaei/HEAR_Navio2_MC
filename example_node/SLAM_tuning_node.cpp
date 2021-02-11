@@ -304,6 +304,8 @@ int main(int argc, char** argv) {
     Wait wait_100ms;
     wait_100ms.wait_time_ms=100;
 
+    Wait wait_5s;
+    wait_5s.wait_time_ms=5000;
 
     MissionPipeline mrft_pipeline;
 
@@ -338,10 +340,14 @@ int main(int argc, char** argv) {
     mrft_pipeline.addElement((MissionElement*)reset_z); //Reset I-term to zero
     mrft_pipeline.addElement((MissionElement*)&wait_100ms);
     mrft_pipeline.addElement((MissionElement*)arm_motors);
-    mrft_pipeline.addElement((MissionElement*)user_command);
+//  mrft_pipeline.addElement((MissionElement*)user_command);
+    mrft_pipeline.addElement((MissionElement*)&wait_1s);
+
     mrft_pipeline.addElement((MissionElement*)reset_z); //Reset I-term to zero
     mrft_pipeline.addElement((MissionElement*)takeoff_relative_waypoint);
-    mrft_pipeline.addElement((MissionElement*)user_command);
+
+//    mrft_pipeline.addElement((MissionElement*)user_command);
+    mrft_pipeline.addElement((MissionElement*)&wait_5s);
 
     #ifdef MRFT_X_SLAM
     mrft_pipeline.addElement((MissionElement*)mrft_switch_on_x);
@@ -355,7 +361,9 @@ int main(int argc, char** argv) {
     mrft_pipeline.addElement((MissionElement*)mrft_switch_on_z);
     #endif
 
-    mrft_pipeline.addElement((MissionElement*)user_command);  
+//    mrft_pipeline.addElement((MissionElement*)user_command);  
+    mrft_pipeline.addElement((MissionElement*)&wait_5s);
+
     mrft_pipeline.addElement((MissionElement*)initial_pose_waypoint);
 
     #ifdef MRFT_X_SLAM
@@ -370,7 +378,9 @@ int main(int argc, char** argv) {
     mrft_pipeline.addElement((MissionElement*)mrft_switch_off_z);
     #endif
 
-    mrft_pipeline.addElement((MissionElement*)user_command);
+//    mrft_pipeline.addElement((MissionElement*)user_command);
+    mrft_pipeline.addElement((MissionElement*)&wait_1s);
+    
     mrft_pipeline.addElement((MissionElement*)land_set_rest_norm_settings);   
     mrft_pipeline.addElement((MissionElement*)&wait_100ms);
     mrft_pipeline.addElement((MissionElement*)land_relative_waypoint);
