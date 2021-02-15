@@ -148,7 +148,7 @@ int main(int argc, char** argv) {
     MissionElement* initial_pose_waypoint = new SetRelativeWaypoint(0., 0., 0., 0.); //TODO: SetRelativeWaypoint needs substantial refactoring
 
    
-    MissionElement* takeoff_relative_waypoint = new SetRelativeWaypoint(0., 0., 1.0, 0.);
+    MissionElement* takeoff_relative_waypoint = new SetRelativeWaypoint(0., 0., 1.5, 0.);
 
     MissionElement* land_relative_waypoint = new SetRelativeWaypoint(0., 0., -2., 0.);
 
@@ -276,7 +276,7 @@ int main(int argc, char** argv) {
 
 #ifdef MRFT_X_SLAM
     ((UpdateController*)update_controller_mrft_x)->mrft_data.beta = -0.73;
-    ((UpdateController*)update_controller_mrft_x)->mrft_data.relay_amp = 0.20;
+    ((UpdateController*)update_controller_mrft_x)->mrft_data.relay_amp = 0.15;
     ((UpdateController*)update_controller_mrft_x)->mrft_data.bias = 0.0;
     ((UpdateController*)update_controller_mrft_x)->mrft_data.id = block_id::MRFT_X;
 #endif
