@@ -33,8 +33,8 @@
 // #include "InternalSystemStateCondition.hpp"
 // #include "StateMonitor.hpp"
 
-#define MRFT_X_SLAM
-//#define MRFT_Y_SLAM
+//#define MRFT_X_SLAM
+#define MRFT_Y_SLAM
 //#define MRFT_Z_SLAM
 
 
@@ -283,7 +283,7 @@ int main(int argc, char** argv) {
 
 #ifdef MRFT_Y_SLAM
     ((UpdateController*)update_controller_mrft_y)->mrft_data.beta = -0.73;
-    ((UpdateController*)update_controller_mrft_y)->mrft_data.relay_amp = 0.20;
+    ((UpdateController*)update_controller_mrft_y)->mrft_data.relay_amp = 0.15;
     ((UpdateController*)update_controller_mrft_y)->mrft_data.bias = 0.0;
     ((UpdateController*)update_controller_mrft_y)->mrft_data.id = block_id::MRFT_Y;
 #endif
