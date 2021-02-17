@@ -25,8 +25,8 @@
 #include "HEAR_ROS_BRIDGE/ROSUnit_RestNormSettingsClnt.hpp"
 #include "HEAR_ROS_BRIDGE/ROSUnit_ControlOutputSubscriber.hpp"
 
-#define MRFT_ROLL_CHAN
-//#define MRFT_PITCH_CHAN
+//#define MRFT_ROLL_CHAN
+#define MRFT_PITCH_CHAN
 //#define MRFT_Z_CHAN
 
 
@@ -126,7 +126,7 @@ int main(int argc, char** argv) {
     MissionElement* initial_pose_waypoint = new SetRelativeWaypoint(0., 0., 0., 0.); //TODO: SetRelativeWaypoint needs substantial refactoring
 
    
-    MissionElement* takeoff_relative_waypoint = new SetRelativeWaypoint(0., 0., 1.2, 0.);
+    MissionElement* takeoff_relative_waypoint = new SetRelativeWaypoint(0., 0., 1.5, 0.);
 
     MissionElement* land_relative_waypoint = new SetRelativeWaypoint(0., 0., -2., 0.);
 
