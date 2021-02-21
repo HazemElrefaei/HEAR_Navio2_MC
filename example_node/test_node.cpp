@@ -28,6 +28,7 @@
 // #include "InternalSystemStateCondition.hpp"
 // #include "StateMonitor.hpp"
 
+#define AUTO_TEST
 #define TESTING
 #define BIG_HEXA
 int main(int argc, char** argv) {
@@ -288,6 +289,9 @@ int main(int argc, char** argv) {
 
     Wait wait_100ms;
     wait_100ms.wait_time_ms=100;
+
+    Wait wait_5s;
+    wait_5s.wait_time_ms=5000;
   
     #ifdef TESTING
     MissionPipeline testing_pipeline;
@@ -305,15 +309,27 @@ int main(int argc, char** argv) {
     testing_pipeline.addElement((MissionElement*)set_height_offset); //TODO: (CHECK Desc) Set a constant height command/reference based on the current pos
     testing_pipeline.addElement((MissionElement*)&wait_1s);
     testing_pipeline.addElement((MissionElement*)set_restricted_norm_settings);
-    testing_pipeline.addElement((MissionElement*)initial_pose_waypoint);
+    testing_pipeline.addElement((MissionElement*)initial_pose_waypoint);   
     testing_pipeline.addElement((MissionElement*)user_command);
     testing_pipeline.addElement((MissionElement*)reset_z); //Reset I-term to zero
     testing_pipeline.addElement((MissionElement*)&wait_100ms);
     testing_pipeline.addElement((MissionElement*)arm_motors);
+
+    #ifdef AUTO_TEST
+    testing_pipeline.addElement((MissionElement*)&wait_1s);
+    #else
     testing_pipeline.addElement((MissionElement*)user_command);
+    #endif
+    
     testing_pipeline.addElement((MissionElement*)reset_z); //Reset I-term to zero
     testing_pipeline.addElement((MissionElement*)takeoff_relative_waypoint);
+    
+    #ifdef AUTO_TEST
+    testing_pipeline.addElement((MissionElement*)&wait_5s);
+    #else
     testing_pipeline.addElement((MissionElement*)user_command);
+    #endif
+    
     // testing_pipeline.addElement((MissionElement*)waypoint_set_rest_norm_settings);   
     // testing_pipeline.addElement((MissionElement*)&wait_100ms);
     // testing_pipeline.addElement((MissionElement*)absolute_origin_1m_height);
