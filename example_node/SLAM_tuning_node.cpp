@@ -14,29 +14,27 @@
 #include "HEAR_mission/SendBoolSignal.hpp"
 #include "HEAR_mission/ResetController.hpp"
 #include "HEAR_mission/SetRelativeWaypoint.hpp"
-//#include "HEAR_mission/SetFloatConst.hpp"
 #include "HEAR_mission/SwitchTrigger.hpp"
 #include "HEAR_mission/SetAbsoluteWaypoint.hpp"
 #include "HEAR_mission/UpdateController.hpp"
 #include "HEAR_ROS_BRIDGE/ROSUnit_UpdateControllerClnt.hpp"
 #include "HEAR_math/ConstantFloat.hpp"
-//
 #include "HEAR_ROS_BRIDGE/ROSUnit_UpdateControllerSrv.hpp"
 #include "HEAR_control/PIDController.hpp"
-//
 #include "HEAR_ROS_BRIDGE/ROSUnit_InfoSubscriber.hpp"
 #include "HEAR_ROS_BRIDGE/ROSUnit_Factory.hpp"
 #include "HEAR_ROS_BRIDGE/ROSUnit_RestNormSettingsClnt.hpp"
 #include "HEAR_ROS_BRIDGE/ROSUnit_ControlOutputSubscriber.hpp"
 
-// #include "ChangeInternalState.hpp"
-// #include "InternalSystemStateCondition.hpp"
-// #include "StateMonitor.hpp"
-
 //#define MRFT_X_SLAM
-#define MRFT_Y_SLAM
+//#define MRFT_Y_SLAM
 //#define MRFT_Z_SLAM
 
+#define PID_X_SLAM
+#define PID_Y_SLAM
+#define PID_Z_SLAM
+
+const float SLAM_FREQ = 30.0;
 
 int main(int argc, char** argv) {
     Logger::assignLogger(new StdLogger());
@@ -57,6 +55,9 @@ int main(int argc, char** argv) {
     ROSUnit* ros_mrft_trigger_x = ROSUnit_Factory_main.CreateROSUnit(ROSUnit_tx_rx_type::Client,
                                                                       ROSUnit_msg_type::ROSUnit_Float,
                                                                       "mrft_switch_x");
+#endif
+
+#ifdef PID_X_SLAM
     ROSUnit* ros_slam_pid_trigger_x = ROSUnit_Factory_main.CreateROSUnit(ROSUnit_tx_rx_type::Client,
                                                                       ROSUnit_msg_type::ROSUnit_Float,
                                                                       "slam_pid_switch_x");
@@ -66,6 +67,9 @@ int main(int argc, char** argv) {
     ROSUnit* ros_mrft_trigger_y = ROSUnit_Factory_main.CreateROSUnit(ROSUnit_tx_rx_type::Client,
                                                                       ROSUnit_msg_type::ROSUnit_Float,
                                                                       "mrft_switch_y");
+#endif
+
+#ifdef PID_Y_SLAM
     ROSUnit* ros_slam_pid_trigger_y = ROSUnit_Factory_main.CreateROSUnit(ROSUnit_tx_rx_type::Client,
                                                                       ROSUnit_msg_type::ROSUnit_Float,
                                                                       "slam_pid_switch_y");
@@ -75,6 +79,9 @@ int main(int argc, char** argv) {
     ROSUnit* ros_mrft_trigger_z = ROSUnit_Factory_main.CreateROSUnit(ROSUnit_tx_rx_type::Client,
                                                                       ROSUnit_msg_type::ROSUnit_Float,
                                                                       "mrft_switch_z");
+#endif
+
+#ifdef PID_Z_SLAM
     ROSUnit* ros_slam_pid_trigger_z = ROSUnit_Factory_main.CreateROSUnit(ROSUnit_tx_rx_type::Client,
                                                                       ROSUnit_msg_type::ROSUnit_Float,
                                                                       "slam_pid_switch_z");
@@ -130,6 +137,24 @@ int main(int argc, char** argv) {
     MissionElement* mrft_switch_off_z=new SwitchTrigger(1);
     #endif
 
+    #ifdef PID_X_SLAM
+    MissionElement* update_controller_pid_salm_x = new UpdateController;
+    MissionElement* pid_slam_switch_on_x = new SwitchTrigger(3);
+    MissionElement* pid_slam_switch_off_x = new SwitchTrigger(1);
+    #endif
+
+    #ifdef PID_Y_SLAM
+    MissionElement* update_controller_pid_salm_y = new UpdateController;
+    MissionElement* pid_slam_switch_on_y = new SwitchTrigger(3);
+    MissionElement* pid_slam_switch_off_y = new SwitchTrigger(1);
+    #endif
+
+    #ifdef PID_Z_SLAM
+    MissionElement* update_controller_pid_salm_z = new UpdateController;
+    MissionElement* pid_slam_switch_on_z = new SwitchTrigger(3);
+    MissionElement* pid_slam_switch_off_z = new SwitchTrigger(1);
+    #endif
+
     MissionElement* reset_z = new ResetController();
 
     MissionElement* arm_motors = new Arm();
@@ -177,6 +202,24 @@ int main(int argc, char** argv) {
     update_controller_mrft_z->getPorts()[(int)UpdateController::ports_id::OP_0]->connect(ros_updt_ctr->getPorts()[(int)ROSUnit_UpdateControllerClnt::ports_id::IP_1_MRFT]);
     mrft_switch_on_z->getPorts()[(int)SwitchTrigger::ports_id::OP_0]->connect(ros_mrft_trigger_z->getPorts()[(int)ROSUnit_SetFloatClnt::ports_id::IP_0]);
     mrft_switch_off_z->getPorts()[(int)SwitchTrigger::ports_id::OP_0]->connect(ros_mrft_trigger_z->getPorts()[(int)ROSUnit_SetFloatClnt::ports_id::IP_0]);   
+    #endif
+
+    #ifdef PID_X_SLAM
+    update_controller_pid_salm_x->getPorts()[(int)UpdateController::ports_id::OP_0]->connect(ros_updt_ctr->getPorts()[(int)ROSUnit_UpdateControllerClnt::ports_id::IP_0_PID]);
+    pid_slam_switch_on_x->getPorts()[(int)SwitchTrigger::ports_id::OP_0]->connect(ros_slam_pid_trigger_x->getPorts()[(int)ROSUnit_SetFloatClnt::ports_id::IP_0]);
+    pid_slam_switch_off_x->getPorts()[(int)SwitchTrigger::ports_id::OP_0]->connect(ros_slam_pid_trigger_x->getPorts()[(int)ROSUnit_SetFloatClnt::ports_id::IP_0]);
+    #endif
+
+    #ifdef PID_Y_SLAM
+    update_controller_pid_salm_y->getPorts()[(int)UpdateController::ports_id::OP_0]->connect(ros_updt_ctr->getPorts()[(int)ROSUnit_UpdateControllerClnt::ports_id::IP_0_PID]);
+    pid_slam_switch_on_y->getPorts()[(int)SwitchTrigger::ports_id::OP_0]->connect(ros_slam_pid_trigger_y->getPorts()[(int)ROSUnit_SetFloatClnt::ports_id::IP_0]);
+    pid_slam_switch_off_y->getPorts()[(int)SwitchTrigger::ports_id::OP_0]->connect(ros_slam_pid_trigger_y->getPorts()[(int)ROSUnit_SetFloatClnt::ports_id::IP_0]);
+    #endif
+
+    #ifdef PID_Z_SLAM
+    update_controller_pid_salm_z->getPorts()[(int)UpdateController::ports_id::OP_0]->connect(ros_updt_ctr->getPorts()[(int)ROSUnit_UpdateControllerClnt::ports_id::IP_0_PID]);
+    pid_slam_switch_on_z->getPorts()[(int)SwitchTrigger::ports_id::OP_0]->connect(ros_slam_pid_trigger_z->getPorts()[(int)ROSUnit_SetFloatClnt::ports_id::IP_0]);
+    pid_slam_switch_off_z->getPorts()[(int)SwitchTrigger::ports_id::OP_0]->connect(ros_slam_pid_trigger_z->getPorts()[(int)ROSUnit_SetFloatClnt::ports_id::IP_0]);
     #endif
 
     ros_pos_sub->getPorts()[(int)ROSUnit_PointSub::ports_id::OP_0]->connect(initial_pose_waypoint->getPorts()[(int)SetRelativeWaypoint::ports_id::IP_0]);
@@ -238,18 +281,18 @@ int main(int argc, char** argv) {
     ((UpdateController*)update_controller_pid_z)->pid_data.dt = (float)1.0/120.0;
     ((UpdateController*)update_controller_pid_z)->pid_data.id = block_id::PID_Z;
 
-    ((UpdateController*)update_controller_pid_roll)->pid_data.kp = 0.3663;
+    ((UpdateController*)update_controller_pid_roll)->pid_data.kp = 0.3265;
     ((UpdateController*)update_controller_pid_roll)->pid_data.ki = 0.0;
-    ((UpdateController*)update_controller_pid_roll)->pid_data.kd = 0.0612;
+    ((UpdateController*)update_controller_pid_roll)->pid_data.kd = 0.0565;
     ((UpdateController*)update_controller_pid_roll)->pid_data.kdd = 0.0;
     ((UpdateController*)update_controller_pid_roll)->pid_data.anti_windup = 0;
     ((UpdateController*)update_controller_pid_roll)->pid_data.en_pv_derivation = 1;
     ((UpdateController*)update_controller_pid_roll)->pid_data.dt = 1.f/200.f;
     ((UpdateController*)update_controller_pid_roll)->pid_data.id = block_id::PID_ROLL;
 
-    ((UpdateController*)update_controller_pid_pitch)->pid_data.kp = 0.4462;
+    ((UpdateController*)update_controller_pid_pitch)->pid_data.kp = 0.3569;
     ((UpdateController*)update_controller_pid_pitch)->pid_data.ki = 0.0;
-    ((UpdateController*)update_controller_pid_pitch)->pid_data.kd =  0.0607;
+    ((UpdateController*)update_controller_pid_pitch)->pid_data.kd =  0.0617;
     ((UpdateController*)update_controller_pid_pitch)->pid_data.kdd = 0.0;
     ((UpdateController*)update_controller_pid_pitch)->pid_data.anti_windup = 0;
     ((UpdateController*)update_controller_pid_pitch)->pid_data.en_pv_derivation = 1;
@@ -275,14 +318,14 @@ int main(int argc, char** argv) {
     ((UpdateController*)update_controller_pid_yaw_rate)->pid_data.id = block_id::PID_YAW_RATE;
 
 #ifdef MRFT_X_SLAM
-    ((UpdateController*)update_controller_mrft_x)->mrft_data.beta = -0.60;
+    ((UpdateController*)update_controller_mrft_x)->mrft_data.beta = -0.77;
     ((UpdateController*)update_controller_mrft_x)->mrft_data.relay_amp = 0.15;
     ((UpdateController*)update_controller_mrft_x)->mrft_data.bias = 0.0;
     ((UpdateController*)update_controller_mrft_x)->mrft_data.id = block_id::MRFT_X;
 #endif
 
 #ifdef MRFT_Y_SLAM
-    ((UpdateController*)update_controller_mrft_y)->mrft_data.beta = -0.60;
+    ((UpdateController*)update_controller_mrft_y)->mrft_data.beta = -0.77;
     ((UpdateController*)update_controller_mrft_y)->mrft_data.relay_amp = 0.15;
     ((UpdateController*)update_controller_mrft_y)->mrft_data.bias = 0.0;
     ((UpdateController*)update_controller_mrft_y)->mrft_data.id = block_id::MRFT_Y;
@@ -293,6 +336,39 @@ int main(int argc, char** argv) {
     ((UpdateController*)update_controller_mrft_z)->mrft_data.relay_amp = 0.12; //0.1;
     ((UpdateController*)update_controller_mrft_z)->mrft_data.bias = 0.0;
     ((UpdateController*)update_controller_mrft_z)->mrft_data.id = block_id::MRFT_Z;
+#endif
+
+#ifdef PID_X_SLAM
+    ((UpdateController*)update_controller_pid_x)->pid_data.kp = 0.3612;
+    ((UpdateController*)update_controller_pid_x)->pid_data.ki = 0.0;
+    ((UpdateController*)update_controller_pid_x)->pid_data.kd = 0.2660;
+    ((UpdateController*)update_controller_pid_x)->pid_data.kdd = 0.0;
+    ((UpdateController*)update_controller_pid_x)->pid_data.anti_windup = 0;
+    ((UpdateController*)update_controller_pid_x)->pid_data.en_pv_derivation = 1;
+    ((UpdateController*)update_controller_pid_x)->pid_data.dt = (float)1.0/SLAM_FREQ;
+    ((UpdateController*)update_controller_pid_x)->pid_data.id = block_id::PID_SLAM_X;
+#endif
+
+#ifdef PID_Y_SLAM
+    ((UpdateController*)update_controller_pid_x)->pid_data.kp = 0.2350;
+    ((UpdateController*)update_controller_pid_x)->pid_data.ki = 0.0;
+    ((UpdateController*)update_controller_pid_x)->pid_data.kd = 0.1731;
+    ((UpdateController*)update_controller_pid_x)->pid_data.kdd = 0.0;
+    ((UpdateController*)update_controller_pid_x)->pid_data.anti_windup = 0;
+    ((UpdateController*)update_controller_pid_x)->pid_data.en_pv_derivation = 1;
+    ((UpdateController*)update_controller_pid_x)->pid_data.dt = (float)1.0/SLAM_FREQ;
+    ((UpdateController*)update_controller_pid_x)->pid_data.id = block_id::PID_SLAM_Y;
+#endif
+
+#ifdef PID_Z_SLAM
+    ((UpdateController*)update_controller_pid_z)->pid_data.kp = 0.2644; 
+    ((UpdateController*)update_controller_pid_z)->pid_data.ki = 0.098; 
+    ((UpdateController*)update_controller_pid_z)->pid_data.kd = 0.1614; 
+    ((UpdateController*)update_controller_pid_z)->pid_data.kdd = 0.0;
+    ((UpdateController*)update_controller_pid_z)->pid_data.anti_windup = 0;
+    ((UpdateController*)update_controller_pid_z)->pid_data.en_pv_derivation = 1;
+    ((UpdateController*)update_controller_pid_z)->pid_data.dt = (float)1.0/SLAM_FREQ;
+    ((UpdateController*)update_controller_pid_z)->pid_data.id = block_id::PID_SLAM_Z;
 #endif
 
     ((ResetController*)reset_z)->target_block = block_id::PID_Z;
@@ -330,6 +406,18 @@ int main(int argc, char** argv) {
     mrft_pipeline.addElement((MissionElement*)update_controller_mrft_z);
     #endif
 
+    #ifdef PID_X_SLAM
+    mrft_pipeline.addElement((MissionElement*)update_controller_pid_salm_x);
+    #endif
+
+    #ifdef PID_Y_SLAM
+    mrft_pipeline.addElement((MissionElement*)update_controller_pid_salm_y);
+    #endif
+
+    #ifdef PID_Z_SLAM
+    mrft_pipeline.addElement((MissionElement*)update_controller_pid_salm_z);
+    #endif
+
     mrft_pipeline.addElement((MissionElement*)set_height_offset); //TODO: (CHECK Desc) Set a constant height command/reference based on the current pos
     mrft_pipeline.addElement((MissionElement*)&wait_1s);
     mrft_pipeline.addElement((MissionElement*)set_restricted_norm_settings);
@@ -360,6 +448,18 @@ int main(int argc, char** argv) {
     mrft_pipeline.addElement((MissionElement*)mrft_switch_on_z);
     #endif
 
+    #ifdef PID_X_SLAM
+    mrft_pipeline.addElement((MissionElement*)pid_slam_switch_on_x);
+    #endif
+
+    #ifdef PID_Y_SLAM
+    mrft_pipeline.addElement((MissionElement*)pid_slam_switch_on_y);
+    #endif
+
+    #ifdef PID_Z_SLAM
+    mrft_pipeline.addElement((MissionElement*)pid_slam_switch_on_z);
+    #endif
+
     mrft_pipeline.addElement((MissionElement*)user_command);  
 //    mrft_pipeline.addElement((MissionElement*)&wait_5s);
 
@@ -375,6 +475,18 @@ int main(int argc, char** argv) {
 
     #ifdef MRFT_Z_SLAM
     mrft_pipeline.addElement((MissionElement*)mrft_switch_off_z);
+    #endif
+
+    #ifdef PID_X_SLAM
+    mrft_pipeline.addElement((MissionElement*)pid_slam_switch_off_x);
+    #endif
+
+    #ifdef PID_Y_SLAM
+    mrft_pipeline.addElement((MissionElement*)pid_slam_switch_off_y);
+    #endif
+
+    #ifdef PID_Z_SLAM
+    mrft_pipeline.addElement((MissionElement*)pid_slam_switch_off_z);
     #endif
 
     mrft_pipeline.addElement((MissionElement*)user_command);
