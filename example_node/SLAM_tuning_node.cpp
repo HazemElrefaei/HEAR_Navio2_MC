@@ -339,36 +339,36 @@ int main(int argc, char** argv) {
 #endif
 
 #ifdef PID_X_SLAM
-    ((UpdateController*)update_controller_pid_x)->pid_data.kp = 0.3612;
-    ((UpdateController*)update_controller_pid_x)->pid_data.ki = 0.0;
-    ((UpdateController*)update_controller_pid_x)->pid_data.kd = 0.2660;
-    ((UpdateController*)update_controller_pid_x)->pid_data.kdd = 0.0;
-    ((UpdateController*)update_controller_pid_x)->pid_data.anti_windup = 0;
-    ((UpdateController*)update_controller_pid_x)->pid_data.en_pv_derivation = 1;
-    ((UpdateController*)update_controller_pid_x)->pid_data.dt = (float)1.0/SLAM_FREQ;
-    ((UpdateController*)update_controller_pid_x)->pid_data.id = block_id::PID_SLAM_X;
+    ((UpdateController*)update_controller_pid_salm_x)->pid_data.kp = 0.3612;
+    ((UpdateController*)update_controller_pid_salm_x)->pid_data.ki = 0.0;
+    ((UpdateController*)update_controller_pid_salm_x)->pid_data.kd = 0.2660;
+    ((UpdateController*)update_controller_pid_salm_x)->pid_data.kdd = 0.0;
+    ((UpdateController*)update_controller_pid_salm_x)->pid_data.anti_windup = 0;
+    ((UpdateController*)update_controller_pid_salm_x)->pid_data.en_pv_derivation = 1;
+    ((UpdateController*)update_controller_pid_salm_x)->pid_data.dt = (float)1.0/SLAM_FREQ;
+    ((UpdateController*)update_controller_pid_salm_x)->pid_data.id = block_id::PID_SLAM_X;
 #endif
 
 #ifdef PID_Y_SLAM
-    ((UpdateController*)update_controller_pid_x)->pid_data.kp = 0.2350;
-    ((UpdateController*)update_controller_pid_x)->pid_data.ki = 0.0;
-    ((UpdateController*)update_controller_pid_x)->pid_data.kd = 0.1731;
-    ((UpdateController*)update_controller_pid_x)->pid_data.kdd = 0.0;
-    ((UpdateController*)update_controller_pid_x)->pid_data.anti_windup = 0;
-    ((UpdateController*)update_controller_pid_x)->pid_data.en_pv_derivation = 1;
-    ((UpdateController*)update_controller_pid_x)->pid_data.dt = (float)1.0/SLAM_FREQ;
-    ((UpdateController*)update_controller_pid_x)->pid_data.id = block_id::PID_SLAM_Y;
+    ((UpdateController*)update_controller_pid_salm_y)->pid_data.kp = 0.2350;
+    ((UpdateController*)update_controller_pid_salm_y)->pid_data.ki = 0.0;
+    ((UpdateController*)update_controller_pid_salm_y)->pid_data.kd = 0.1731;
+    ((UpdateController*)update_controller_pid_salm_y)->pid_data.kdd = 0.0;
+    ((UpdateController*)update_controller_pid_salm_y)->pid_data.anti_windup = 0;
+    ((UpdateController*)update_controller_pid_salm_y)->pid_data.en_pv_derivation = 1;
+    ((UpdateController*)update_controller_pid_salm_y)->pid_data.dt = (float)1.0/SLAM_FREQ;
+    ((UpdateController*)update_controller_pid_salm_y)->pid_data.id = block_id::PID_SLAM_Y;
 #endif
 
 #ifdef PID_Z_SLAM
-    ((UpdateController*)update_controller_pid_z)->pid_data.kp = 0.2644; 
-    ((UpdateController*)update_controller_pid_z)->pid_data.ki = 0.098; 
-    ((UpdateController*)update_controller_pid_z)->pid_data.kd = 0.1614; 
-    ((UpdateController*)update_controller_pid_z)->pid_data.kdd = 0.0;
-    ((UpdateController*)update_controller_pid_z)->pid_data.anti_windup = 0;
-    ((UpdateController*)update_controller_pid_z)->pid_data.en_pv_derivation = 1;
-    ((UpdateController*)update_controller_pid_z)->pid_data.dt = (float)1.0/SLAM_FREQ;
-    ((UpdateController*)update_controller_pid_z)->pid_data.id = block_id::PID_SLAM_Z;
+    ((UpdateController*)update_controller_pid_salm_z)->pid_data.kp = 0.2644; 
+    ((UpdateController*)update_controller_pid_salm_z)->pid_data.ki = 0.098; 
+    ((UpdateController*)update_controller_pid_salm_z)->pid_data.kd = 0.1614; 
+    ((UpdateController*)update_controller_pid_salm_z)->pid_data.kdd = 0.0;
+    ((UpdateController*)update_controller_pid_salm_z)->pid_data.anti_windup = 0;
+    ((UpdateController*)update_controller_pid_salm_z)->pid_data.en_pv_derivation = 1;
+    ((UpdateController*)update_controller_pid_salm_z)->pid_data.dt = (float)1.0/SLAM_FREQ;
+    ((UpdateController*)update_controller_pid_salm_z)->pid_data.id = block_id::PID_SLAM_Z;
 #endif
 
     ((ResetController*)reset_z)->target_block = block_id::PID_Z;
