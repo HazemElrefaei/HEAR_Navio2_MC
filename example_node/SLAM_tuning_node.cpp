@@ -174,7 +174,7 @@ int main(int argc, char** argv) {
     MissionElement* send_set_map_offset_signal = new SendBoolSignal(true); 
     MissionElement* initial_pose_waypoint = new SetRelativeWaypoint(0., 0., 0., 0.); //TODO: SetRelativeWaypoint needs substantial refactoring
 
-    MissionElement* takeoff_relative_waypoint = new SetRelativeWaypoint(0., 0., 2.0, 0.);
+    MissionElement* takeoff_relative_waypoint = new SetRelativeWaypoint(0., 0., 1.5, 0.);
     MissionElement* step_relative_waypoint_x = new SetRelativeWaypoint(0.8, 0., 0.0, 0.);
     MissionElement* land_relative_waypoint = new SetRelativeWaypoint(0., 0., -2., 0.);
 
@@ -363,7 +363,7 @@ int main(int argc, char** argv) {
 
 #ifdef PID_Z_SLAM
     ((UpdateController*)update_controller_pid_salm_z)->pid_data.kp = 0.2644; 
-    ((UpdateController*)update_controller_pid_salm_z)->pid_data.ki = 0.098; 
+    ((UpdateController*)update_controller_pid_salm_z)->pid_data.ki = 0.0; 
     ((UpdateController*)update_controller_pid_salm_z)->pid_data.kd = 0.1614; 
     ((UpdateController*)update_controller_pid_salm_z)->pid_data.kdd = 0.0;
     ((UpdateController*)update_controller_pid_salm_z)->pid_data.anti_windup = 0;
