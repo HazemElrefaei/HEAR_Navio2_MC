@@ -34,6 +34,8 @@
 #define PID_Y_SLAM
 #define PID_Z_SLAM
 
+#define STEP_X
+
 const float SLAM_FREQ = 30.0;
 
 int main(int argc, char** argv) {
@@ -172,9 +174,8 @@ int main(int argc, char** argv) {
     MissionElement* send_set_map_offset_signal = new SendBoolSignal(true); 
     MissionElement* initial_pose_waypoint = new SetRelativeWaypoint(0., 0., 0., 0.); //TODO: SetRelativeWaypoint needs substantial refactoring
 
-   
     MissionElement* takeoff_relative_waypoint = new SetRelativeWaypoint(0., 0., 2.0, 0.);
-
+    MissionElement* step_relative_waypoint_x = new SetRelativeWaypoint(0.5, 0., 0.0, 0.);
     MissionElement* land_relative_waypoint = new SetRelativeWaypoint(0., 0., -2., 0.);
 
     //******************Connections***************
@@ -458,6 +459,11 @@ int main(int argc, char** argv) {
 
     #ifdef PID_Z_SLAM
     mrft_pipeline.addElement((MissionElement*)pid_slam_switch_on_z);
+    #endif
+
+    #ifdef STEP_X
+    mrft_pipeline.addElement((MissionElement*)user_command); 
+    mrft_pipeline.addElement((MissionElement*)step_relative_waypoint_x);
     #endif
 
     mrft_pipeline.addElement((MissionElement*)user_command);  
