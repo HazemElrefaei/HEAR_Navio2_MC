@@ -173,7 +173,7 @@ int main(int argc, char** argv) {
     MissionElement* initial_pose_waypoint = new SetRelativeWaypoint(0., 0., 0., 0.); //TODO: SetRelativeWaypoint needs substantial refactoring
 
    
-    MissionElement* takeoff_relative_waypoint = new SetRelativeWaypoint(0., 0., 1.5, 0.);
+    MissionElement* takeoff_relative_waypoint = new SetRelativeWaypoint(0., 0., 2.0, 0.);
 
     MissionElement* land_relative_waypoint = new SetRelativeWaypoint(0., 0., -2., 0.);
 
@@ -273,7 +273,7 @@ int main(int argc, char** argv) {
     ((UpdateController*)update_controller_pid_y)->pid_data.id = block_id::PID_Y;
 
     ((UpdateController*)update_controller_pid_z)->pid_data.kp = 0.785493; 
-    ((UpdateController*)update_controller_pid_z)->pid_data.ki = 0.098; 
+    ((UpdateController*)update_controller_pid_z)->pid_data.ki = 0.24; 
     ((UpdateController*)update_controller_pid_z)->pid_data.kd = 0.239755; 
     ((UpdateController*)update_controller_pid_z)->pid_data.kdd = 0.0;
     ((UpdateController*)update_controller_pid_z)->pid_data.anti_windup = 0;
