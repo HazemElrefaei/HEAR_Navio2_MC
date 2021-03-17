@@ -28,7 +28,7 @@
 // #include "InternalSystemStateCondition.hpp"
 // #include "StateMonitor.hpp"
 
-#define AUTO_TEST
+//#define AUTO_TEST
 #define TESTING
 #define BIG_HEXA
 int main(int argc, char** argv) {
