@@ -232,6 +232,9 @@ int main(int argc, char** argv) {
     ros_pos_sub->getPorts()[(int)ROSUnit_PointSub::ports_id::OP_0]->connect(land_relative_waypoint->getPorts()[(int)SetRelativeWaypoint::ports_id::IP_0]);
     rosunit_yaw_provider->getPorts()[(int)ROSUnit_PointSub::ports_id::OP_1]->connect(land_relative_waypoint->getPorts()[(int)SetRelativeWaypoint::ports_id::IP_1]);
 
+    ros_pos_sub->getPorts()[(int)ROSUnit_PointSub::ports_id::OP_0]->connect(step_relative_waypoint_x->getPorts()[(int)SetRelativeWaypoint::ports_id::IP_0]);
+    rosunit_yaw_provider->getPorts()[(int)ROSUnit_PointSub::ports_id::OP_1]->connect(step_relative_waypoint_x->getPorts()[(int)SetRelativeWaypoint::ports_id::IP_1]);
+    
     ros_pos_sub->getPorts()[(int)ROSUnit_PointSub::ports_id::OP_0]->connect(set_height_offset->getPorts()[(int)SetHeightOffset::ports_id::IP_0]);
 
     reset_z->getPorts()[(int)ResetController::ports_id::OP_0]->connect(ros_rst_ctr->getPorts()[(int)ROSUnit_SetInt8Clnt::ports_id::IP_0]);
@@ -248,7 +251,7 @@ int main(int argc, char** argv) {
     send_set_map_offset_signal->getPorts()[(int)SendBoolSignal::ports_id::OP_0]->connect(rosunit_set_map_frame_offset->getPorts()[(int)ROSUnit_SetBoolClnt::ports_id::IP_0]);
     initial_pose_waypoint->getPorts()[(int)SetRelativeWaypoint::ports_id::OP_0]->connect(ros_set_path_clnt->getPorts()[(int)ROSUnit_SetPosesClnt::ports_id::IP_0]);
     takeoff_relative_waypoint->getPorts()[(int)SetRelativeWaypoint::ports_id::OP_0]->connect(ros_set_path_clnt->getPorts()[(int)ROSUnit_SetPosesClnt::ports_id::IP_0]);
-
+    step_relative_waypoint_x->getPorts()[(int)SetRelativeWaypoint::ports_id::OP_0]->connect(ros_set_path_clnt->getPorts()[(int)ROSUnit_SetPosesClnt::ports_id::IP_0]);
 
     //absolute_zero_Z_relative_waypoint->connect(ros_set_path_clnt);
     land_relative_waypoint->getPorts()[(int)SetRelativeWaypoint::ports_id::OP_0]->connect(ros_set_path_clnt->getPorts()[(int)ROSUnit_SetPosesClnt::ports_id::IP_0]);
