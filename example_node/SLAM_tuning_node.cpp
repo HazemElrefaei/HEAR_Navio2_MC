@@ -166,7 +166,7 @@ int main(int argc, char** argv) {
 
     // MissionElement* state_monitor = new StateMonitor();
 
-    MissionElement* set_restricted_norm_settings = new SetRestNormSettings(true, false, 0.5); 
+    MissionElement* set_restricted_norm_settings = new SetRestNormSettings(true, false, 0.8); 
 
     MissionElement* land_set_rest_norm_settings = new SetRestNormSettings(true, false, 0.15);
 
@@ -176,7 +176,7 @@ int main(int argc, char** argv) {
 
     MissionElement* takeoff_relative_waypoint = new SetRelativeWaypoint(0., 0., 1.5, 0.);
     MissionElement* step_relative_waypoint_x = new SetRelativeWaypoint(0.8, 0., 0.0, 0.);
-    MissionElement* land_relative_waypoint = new SetRelativeWaypoint(0., 0., -2., 0.);
+    MissionElement* land_relative_waypoint = new SetRelativeWaypoint(0., 0., -1.5, 0.);
 
     //******************Connections***************
     update_controller_pid_x->getPorts()[(int)UpdateController::ports_id::OP_0]->connect(ros_updt_ctr->getPorts()[(int)ROSUnit_UpdateControllerClnt::ports_id::IP_0_PID]);
