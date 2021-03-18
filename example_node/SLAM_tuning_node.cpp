@@ -323,7 +323,7 @@ int main(int argc, char** argv) {
 
 #ifdef MRFT_X_SLAM
     ((UpdateController*)update_controller_mrft_x)->mrft_data.beta = -0.77;
-    ((UpdateController*)update_controller_mrft_x)->mrft_data.relay_amp = 0.15;
+    ((UpdateController*)update_controller_mrft_x)->mrft_data.relay_amp = 0.12;
     ((UpdateController*)update_controller_mrft_x)->mrft_data.bias = 0.0;
     ((UpdateController*)update_controller_mrft_x)->mrft_data.id = block_id::MRFT_X;
 #endif
