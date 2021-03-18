@@ -34,7 +34,7 @@
 #define PID_Y_SLAM
 #define PID_Z_SLAM
 
-#define STEP_X
+//#define STEP_X
 
 const float SLAM_FREQ = 30.0;
 
