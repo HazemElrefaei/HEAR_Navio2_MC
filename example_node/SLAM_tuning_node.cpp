@@ -166,7 +166,7 @@ int main(int argc, char** argv) {
 
     // MissionElement* state_monitor = new StateMonitor();
 
-    MissionElement* set_restricted_norm_settings = new SetRestNormSettings(true, false, 0.8); 
+    MissionElement* set_restricted_norm_settings = new SetRestNormSettings(true, false, 0.5); 
 
     MissionElement* land_set_rest_norm_settings = new SetRestNormSettings(true, false, 0.15);
 
@@ -175,7 +175,7 @@ int main(int argc, char** argv) {
     MissionElement* initial_pose_waypoint = new SetRelativeWaypoint(0., 0., 0., 0.); //TODO: SetRelativeWaypoint needs substantial refactoring
 
     MissionElement* takeoff_relative_waypoint = new SetRelativeWaypoint(0., 0., 1.5, 0.);
-    MissionElement* step_relative_waypoint_x = new SetRelativeWaypoint(0.8, 0., 0.0, 0.);
+    MissionElement* step_relative_waypoint_x = new SetRelativeWaypoint(0.5, 0., 0.0, 0.);
     MissionElement* land_relative_waypoint = new SetRelativeWaypoint(0., 0., -1.5, 0.);
 
     //******************Connections***************
