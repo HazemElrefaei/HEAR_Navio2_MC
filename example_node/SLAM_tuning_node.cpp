@@ -343,9 +343,9 @@ int main(int argc, char** argv) {
 #endif
 
 #ifdef PID_X_SLAM
-    ((UpdateController*)update_controller_pid_salm_x)->pid_data.kp = 0.3612;
+    ((UpdateController*)update_controller_pid_salm_x)->pid_data.kp = 0.28896;
     ((UpdateController*)update_controller_pid_salm_x)->pid_data.ki = 0.0;
-    ((UpdateController*)update_controller_pid_salm_x)->pid_data.kd = 0.2660;
+    ((UpdateController*)update_controller_pid_salm_x)->pid_data.kd = 0.2128;
     ((UpdateController*)update_controller_pid_salm_x)->pid_data.kdd = 0.0;
     ((UpdateController*)update_controller_pid_salm_x)->pid_data.anti_windup = 0;
     ((UpdateController*)update_controller_pid_salm_x)->pid_data.en_pv_derivation = 1;
