@@ -26,8 +26,8 @@
 #include "HEAR_ROS_BRIDGE/ROSUnit_RestNormSettingsClnt.hpp"
 #include "HEAR_ROS_BRIDGE/ROSUnit_ControlOutputSubscriber.hpp"
 
-#define MRFT_X_SLAM
-//#define MRFT_Y_SLAM
+//#define MRFT_X_SLAM
+#define MRFT_Y_SLAM
 //#define MRFT_Z_SLAM
 
 //#define PID_X_SLAM
