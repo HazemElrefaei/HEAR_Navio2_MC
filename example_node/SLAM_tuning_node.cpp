@@ -26,8 +26,8 @@
 #include "HEAR_ROS_BRIDGE/ROSUnit_RestNormSettingsClnt.hpp"
 #include "HEAR_ROS_BRIDGE/ROSUnit_ControlOutputSubscriber.hpp"
 
-//#define MRFT_X_SLAM
-#define MRFT_Y_SLAM
+#define MRFT_X_SLAM
+//#define MRFT_Y_SLAM
 //#define MRFT_Z_SLAM
 
 //#define PID_X_SLAM
@@ -322,7 +322,7 @@ int main(int argc, char** argv) {
     ((UpdateController*)update_controller_pid_yaw_rate)->pid_data.id = block_id::PID_YAW_RATE;
 
 #ifdef MRFT_X_SLAM
-    ((UpdateController*)update_controller_mrft_x)->mrft_data.beta = -0.77;
+    ((UpdateController*)update_controller_mrft_x)->mrft_data.beta = -0.6475;
     ((UpdateController*)update_controller_mrft_x)->mrft_data.relay_amp = 0.12;
     ((UpdateController*)update_controller_mrft_x)->mrft_data.bias = 0.0;
     ((UpdateController*)update_controller_mrft_x)->mrft_data.num_of_peak_conf_samples = 2;
@@ -331,7 +331,7 @@ int main(int argc, char** argv) {
 #endif
 
 #ifdef MRFT_Y_SLAM
-    ((UpdateController*)update_controller_mrft_y)->mrft_data.beta = -0.77;
+    ((UpdateController*)update_controller_mrft_y)->mrft_data.beta = -0.6475;
     ((UpdateController*)update_controller_mrft_y)->mrft_data.relay_amp = 0.12;
     ((UpdateController*)update_controller_mrft_y)->mrft_data.bias = 0.0;
     ((UpdateController*)update_controller_mrft_y)->mrft_data.no_switch_delay_in_ms = 100.0;
