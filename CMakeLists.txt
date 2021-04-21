@@ -5,19 +5,15 @@ add_compile_options(-std=c++11)
 
 find_package(catkin REQUIRED COMPONENTS
   roscpp
-  hear_hardware_interface
   hear_architecture
   hear_ros_bridge
 )
 
 catkin_package(
-  INCLUDE_DIRS
-  LIBRARIES ${PROJECT_NAME}
   CATKIN_DEPENDS
     hear_ros_bridge
+    hear_architecture
     roscpp
-  DEPENDS
-    system_lib
 )
 
 include_directories(
@@ -29,6 +25,12 @@ add_executable(mc_slam_mrft_node example_node/SLAM_tuning_node.cpp)
 add_executable(mc_translation_node example_node/traslation_node.cpp)
 add_executable(mc_test_node example_node/test_node.cpp)
 add_executable(mrft_scenario example_node/mrft_scenario.cpp)
+
+add_dependencies(mc_example_node ${catkin_EXPORTED_TARGETS})
+add_dependencies(mc_slam_mrft_node ${catkin_EXPORTED_TARGETS})
+add_dependencies(mc_translation_node ${catkin_EXPORTED_TARGETS})
+add_dependencies(mc_test_node ${catkin_EXPORTED_TARGETS})
+add_dependencies(mrft_scenario ${catkin_EXPORTED_TARGETS})
 
 target_link_libraries(mc_example_node ${catkin_LIBRARIES})
 target_link_libraries(mc_test_node ${catkin_LIBRARIES})
