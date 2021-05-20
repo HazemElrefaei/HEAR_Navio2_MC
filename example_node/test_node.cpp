@@ -262,18 +262,18 @@ int main(int argc, char** argv) {
     ((UpdateController*)update_controller_pid_z)->pid_data.dt = (float)1.0/120.0;
     ((UpdateController*)update_controller_pid_z)->pid_data.id = block_id::PID_Z;
 
-    ((UpdateController*)update_controller_pid_roll)->pid_data.kp = kpr;
+    ((UpdateController*)update_controller_pid_roll)->pid_data.kp = kpr*0.8;
     ((UpdateController*)update_controller_pid_roll)->pid_data.ki = 0.0;
-    ((UpdateController*)update_controller_pid_roll)->pid_data.kd = kdr;
+    ((UpdateController*)update_controller_pid_roll)->pid_data.kd = kdr*0.8;
     ((UpdateController*)update_controller_pid_roll)->pid_data.kdd = 0.0;
     ((UpdateController*)update_controller_pid_roll)->pid_data.anti_windup = 0;
     ((UpdateController*)update_controller_pid_roll)->pid_data.en_pv_derivation = 1;
     ((UpdateController*)update_controller_pid_roll)->pid_data.dt = 1.f/200.f;
     ((UpdateController*)update_controller_pid_roll)->pid_data.id = block_id::PID_ROLL;
 
-    ((UpdateController*)update_controller_pid_pitch)->pid_data.kp = kpp;
+    ((UpdateController*)update_controller_pid_pitch)->pid_data.kp = kpp*0.8;
     ((UpdateController*)update_controller_pid_pitch)->pid_data.ki = 0.0;
-    ((UpdateController*)update_controller_pid_pitch)->pid_data.kd =  kdp;
+    ((UpdateController*)update_controller_pid_pitch)->pid_data.kd =  kdp*0.8;
     ((UpdateController*)update_controller_pid_pitch)->pid_data.kdd = 0.0;
     ((UpdateController*)update_controller_pid_pitch)->pid_data.anti_windup = 0;
     ((UpdateController*)update_controller_pid_pitch)->pid_data.en_pv_derivation = 1;
