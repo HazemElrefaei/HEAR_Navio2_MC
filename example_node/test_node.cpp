@@ -342,7 +342,7 @@ int main(int argc, char** argv) {
     ((UpdateController*)update_controller_pid_pitch)->pid_data.dt = 1.f/200.f;
     ((UpdateController*)update_controller_pid_pitch)->pid_data.id = block_id::PID_PITCH;
 
-    ((UpdateController*)update_controller_pid_yaw)->pid_data.kp = 3.2;
+    ((UpdateController*)update_controller_pid_yaw)->pid_data.kp = 1.6;
     ((UpdateController*)update_controller_pid_yaw)->pid_data.ki = 0.0;
     ((UpdateController*)update_controller_pid_yaw)->pid_data.kd = 0.0;
     ((UpdateController*)update_controller_pid_yaw)->pid_data.kdd = 0.0;
@@ -351,7 +351,7 @@ int main(int argc, char** argv) {
     ((UpdateController*)update_controller_pid_yaw)->pid_data.dt = 1.f/120.f;
     ((UpdateController*)update_controller_pid_yaw)->pid_data.id = block_id::PID_YAW;
 
-    ((UpdateController*)update_controller_pid_yaw_rate)->pid_data.kp = 0.32;
+    ((UpdateController*)update_controller_pid_yaw_rate)->pid_data.kp = 0.16;
     ((UpdateController*)update_controller_pid_yaw_rate)->pid_data.ki = 0.0;
     ((UpdateController*)update_controller_pid_yaw_rate)->pid_data.kd = 0.0;
     ((UpdateController*)update_controller_pid_yaw_rate)->pid_data.kdd = 0.0;
