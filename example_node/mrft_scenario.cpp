@@ -94,20 +94,20 @@ int main(int argc, char** argv) {
 
     #ifdef  MRFT_ROLL_CHAN
     MissionElement* update_controller_mrft_roll = new UpdateController();
-    MissionElement* mrft_switch_on_roll = new SwitchTrigger(3);
-    MissionElement* mrft_switch_off_roll = new SwitchTrigger(1);
+    MissionElement* mrft_switch_on_roll = new SwitchTrigger(1);
+    MissionElement* mrft_switch_off_roll = new SwitchTrigger(-1);
     #endif
 
     #ifdef  MRFT_PITCH_CHAN
     MissionElement* update_controller_mrft_pitch = new UpdateController();
-    MissionElement* mrft_switch_on_pitch = new SwitchTrigger(3);
-    MissionElement* mrft_switch_off_pitch = new SwitchTrigger(1);
+    MissionElement* mrft_switch_on_pitch = new SwitchTrigger(1);
+    MissionElement* mrft_switch_off_pitch = new SwitchTrigger(-1);
     #endif
 
     #ifdef  MRFT_Z_CHAN
     MissionElement* update_controller_mrft_z = new UpdateController();
-    MissionElement* mrft_switch_on_z=new SwitchTrigger(3);
-    MissionElement* mrft_switch_off_z=new SwitchTrigger(1);
+    MissionElement* mrft_switch_on_z=new SwitchTrigger(1);
+    MissionElement* mrft_switch_off_z=new SwitchTrigger(-1);
     #endif
 
     MissionElement* reset_z = new ResetController();

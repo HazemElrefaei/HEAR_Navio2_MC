@@ -123,20 +123,20 @@ int main(int argc, char** argv) {
 
     #ifdef  MRFT_X_SLAM
     MissionElement* update_controller_mrft_x = new UpdateController();
-    MissionElement* mrft_switch_on_x=new SwitchTrigger(3);
-    MissionElement* mrft_switch_off_x=new SwitchTrigger(1);
+    MissionElement* mrft_switch_on_x=new SwitchTrigger(1);
+    MissionElement* mrft_switch_off_x=new SwitchTrigger(0);
     #endif
 
     #ifdef  MRFT_Y_SLAM
     MissionElement* update_controller_mrft_y = new UpdateController();
-    MissionElement* mrft_switch_on_y=new SwitchTrigger(3);
-    MissionElement* mrft_switch_off_y=new SwitchTrigger(1);
+    MissionElement* mrft_switch_on_y=new SwitchTrigger(1);
+    MissionElement* mrft_switch_off_y=new SwitchTrigger(0);
     #endif
 
     #ifdef  MRFT_Z_SLAM
     MissionElement* update_controller_mrft_z = new UpdateController();
-    MissionElement* mrft_switch_on_z=new SwitchTrigger(3);
-    MissionElement* mrft_switch_off_z=new SwitchTrigger(1);
+    MissionElement* mrft_switch_on_z=new SwitchTrigger(1);
+    MissionElement* mrft_switch_off_z=new SwitchTrigger(0);
     #endif
 
     #ifdef PID_X_SLAM
