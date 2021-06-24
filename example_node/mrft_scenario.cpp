@@ -25,9 +25,9 @@
 #include "HEAR_ROS_BRIDGE/ROSUnit_RestNormSettingsClnt.hpp"
 #include "HEAR_ROS_BRIDGE/ROSUnit_ControlOutputSubscriber.hpp"
 
-//#define MRFT_ROLL_CHAN
-//#define MRFT_PITCH_CHAN
-#define MRFT_Z_CHAN
+#define MRFT_ROLL_CHAN
+#define MRFT_PITCH_CHAN
+//#define MRFT_Z_CHAN
 
 #define SMALL_HEXA
 
@@ -126,9 +126,9 @@ int main(int argc, char** argv) {
     MissionElement* set_height_offset = new SetHeightOffset();
     MissionElement* initial_pose_waypoint = new SetRelativeWaypoint(0., 0., 0., 0.); //TODO: SetRelativeWaypoint needs substantial refactoring
 
-   
+    
     MissionElement* takeoff_relative_waypoint = new SetRelativeWaypoint(0., 0., 1.5, 0.);
-
+    MissionElement* forward_1m = new SetRelativeWaypoint(1.0, 0., 0.0, 0.);
     MissionElement* land_relative_waypoint = new SetRelativeWaypoint(0., 0., -2., 0.);
 
     //******************Connections***************
@@ -164,6 +164,9 @@ int main(int argc, char** argv) {
     ros_pos_sub->getPorts()[(int)ROSUnit_PointSub::ports_id::OP_0]->connect(takeoff_relative_waypoint->getPorts()[(int)SetRelativeWaypoint::ports_id::IP_0]);
     rosunit_yaw_provider->getPorts()[(int)ROSUnit_PointSub::ports_id::OP_1]->connect(takeoff_relative_waypoint->getPorts()[(int)SetRelativeWaypoint::ports_id::IP_1]);
 
+    ros_pos_sub->getPorts()[(int)ROSUnit_PointSub::ports_id::OP_0]->connect(forward_1m->getPorts()[(int)SetRelativeWaypoint::ports_id::IP_0]);
+    rosunit_yaw_provider->getPorts()[(int)ROSUnit_PointSub::ports_id::OP_1]->connect(forward_1m->getPorts()[(int)SetRelativeWaypoint::ports_id::IP_1]);
+
     ros_pos_sub->getPorts()[(int)ROSUnit_PointSub::ports_id::OP_0]->connect(land_relative_waypoint->getPorts()[(int)SetRelativeWaypoint::ports_id::IP_0]);
     rosunit_yaw_provider->getPorts()[(int)ROSUnit_PointSub::ports_id::OP_1]->connect(land_relative_waypoint->getPorts()[(int)SetRelativeWaypoint::ports_id::IP_1]);
 
@@ -182,7 +185,7 @@ int main(int argc, char** argv) {
     set_height_offset->getPorts()[(int)SetHeightOffset::ports_id::OP_0]->connect(ros_set_height_offset->getPorts()[(int)ROSUnit_SetFloatClnt::ports_id::IP_0]);
     initial_pose_waypoint->getPorts()[(int)SetRelativeWaypoint::ports_id::OP_0]->connect(ros_set_path_clnt->getPorts()[(int)ROSUnit_SetPosesClnt::ports_id::IP_0]);
     takeoff_relative_waypoint->getPorts()[(int)SetRelativeWaypoint::ports_id::OP_0]->connect(ros_set_path_clnt->getPorts()[(int)ROSUnit_SetPosesClnt::ports_id::IP_0]);
-
+    forward_1m->getPorts()[(int)SetRelativeWaypoint::ports_id::OP_0]->connect(ros_set_path_clnt->getPorts()[(int)ROSUnit_SetPosesClnt::ports_id::IP_0]);
 
     //absolute_zero_Z_relative_waypoint->connect(ros_set_path_clnt);
     land_relative_waypoint->getPorts()[(int)SetRelativeWaypoint::ports_id::OP_0]->connect(ros_set_path_clnt->getPorts()[(int)ROSUnit_SetPosesClnt::ports_id::IP_0]);
@@ -345,6 +348,8 @@ int main(int argc, char** argv) {
     Wait wait_100ms;
     wait_100ms.wait_time_ms=100;
 
+    Wait wait_700ms;
+    wait_700ms.wait_time_ms =500;
 
     MissionPipeline mrft_pipeline;
 
@@ -381,7 +386,8 @@ int main(int argc, char** argv) {
     mrft_pipeline.addElement((MissionElement*)user_command);
     mrft_pipeline.addElement((MissionElement*)reset_z); //Reset I-term to zero
     mrft_pipeline.addElement((MissionElement*)takeoff_relative_waypoint);
-    mrft_pipeline.addElement((MissionElement*)user_command);
+    // mrft_pipeline.addElement((MissionElement*)user_command);
+    mrft_pipeline.addElement((MissionElement*)&wait_700ms);
 
     #ifdef MRFT_ROLL_CHAN
     mrft_pipeline.addElement((MissionElement*)mrft_switch_on_roll);
@@ -411,6 +417,9 @@ int main(int argc, char** argv) {
     #endif
 
     mrft_pipeline.addElement((MissionElement*)user_command);
+    mrft_pipeline.addElement((MissionElement*)forward_1m);
+    mrft_pipeline.addElement((MissionElement*)user_command);
+
     mrft_pipeline.addElement((MissionElement*)land_set_rest_norm_settings);   
     mrft_pipeline.addElement((MissionElement*)&wait_100ms);
     mrft_pipeline.addElement((MissionElement*)land_relative_waypoint);
