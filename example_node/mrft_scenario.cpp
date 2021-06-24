@@ -26,10 +26,10 @@
 #include "HEAR_ROS_BRIDGE/ROSUnit_ControlOutputSubscriber.hpp"
 
 //#define MRFT_ROLL_CHAN
-#define MRFT_PITCH_CHAN
-//#define MRFT_Z_CHAN
+//#define MRFT_PITCH_CHAN
+#define MRFT_Z_CHAN
 
-//#define SMALL_HEXA
+#define SMALL_HEXA
 
 int main(int argc, char** argv) {
     Logger::assignLogger(new StdLogger());

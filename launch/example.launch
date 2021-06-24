@@ -1,0 +1,8 @@
+<launch> 
+  <rosparam command="load" file="$(find hear_navio_mc_example)/params/controller_params.yaml"/>
+
+  <node pkg="hear_navio_mc_example" type="mc_test_node" 
+  name="test_node" output="screen"/> 
+
+ 
+</launch> 
