@@ -30,7 +30,11 @@
 
 //#define AUTO_TEST
 #define TESTING
+<<<<<<< HEAD
 //#define BIG_HEXA
+=======
+#undef BIG_HEXA
+>>>>>>> 3d4646fdc27ca8a39c3f5d740c641b241115caf9
 #define SMALL_HEXA
 
 int main(int argc, char** argv) {
@@ -155,18 +159,18 @@ int main(int argc, char** argv) {
 
     //*************Setting Flight Elements*************
     #ifdef SMALL_HEXA
-    ((UpdateController*)update_controller_pid_x)->pid_data.kp = 0.696435; //0.51639 * 0.8;
+    ((UpdateController*)update_controller_pid_x)->pid_data.kp = 0.4128; //0.696435; //0.51639 * 0.8;
     ((UpdateController*)update_controller_pid_x)->pid_data.ki = 0.0;
-    ((UpdateController*)update_controller_pid_x)->pid_data.kd = 0.375166; //0.21192 * 0.8;
+    ((UpdateController*)update_controller_pid_x)->pid_data.kd = 0.168; //0.375166; //0.21192 * 0.8;
     ((UpdateController*)update_controller_pid_x)->pid_data.kdd = 0.0;
     ((UpdateController*)update_controller_pid_x)->pid_data.anti_windup = 0;
     ((UpdateController*)update_controller_pid_x)->pid_data.en_pv_derivation = 1;
     ((UpdateController*)update_controller_pid_x)->pid_data.dt = (float)1.0/120.0;
     ((UpdateController*)update_controller_pid_x)->pid_data.id = block_id::PID_X;
 
-    ((UpdateController*)update_controller_pid_y)->pid_data.kp = 0.568331;// 0.51639 * 0.8;
+    ((UpdateController*)update_controller_pid_y)->pid_data.kp = 0.4128; //0.568331;// 0.51639 * 0.8;
     ((UpdateController*)update_controller_pid_y)->pid_data.ki = 0.0;
-    ((UpdateController*)update_controller_pid_y)->pid_data.kd =  0.306157;// * 0.8;
+    ((UpdateController*)update_controller_pid_y)->pid_data.kd =  0.168; // 0.306157;// * 0.8;
     ((UpdateController*)update_controller_pid_y)->pid_data.kdd = 0.0;
     ((UpdateController*)update_controller_pid_y)->pid_data.anti_windup = 0;
     ((UpdateController*)update_controller_pid_y)->pid_data.en_pv_derivation = 1;
@@ -182,18 +186,30 @@ int main(int argc, char** argv) {
     ((UpdateController*)update_controller_pid_z)->pid_data.dt = (float)1.0/120.0;
     ((UpdateController*)update_controller_pid_z)->pid_data.id = block_id::PID_Z;
 
+<<<<<<< HEAD
     ((UpdateController*)update_controller_pid_roll)->pid_data.kp = 0.225 * 0.9; //0.2121; //0.172195; //0.3302; //0.286708; //0.225 * 0.8; 
     ((UpdateController*)update_controller_pid_roll)->pid_data.ki = 0.0;
     ((UpdateController*)update_controller_pid_roll)->pid_data.kd = 0.04 * 0.9; //0.0489; //0.042464; //0.0931; //0.056559; //0.04 * 0.8;
+=======
+    ((UpdateController*)update_controller_pid_roll)->pid_data.kp = 0.225 * 0.8; //0.2121; //0.172195; //0.3302; //0.286708; //0.225 * 0.8; 
+    ((UpdateController*)update_controller_pid_roll)->pid_data.ki = 0.0;
+    ((UpdateController*)update_controller_pid_roll)->pid_data.kd = 0.04 * 0.8; // 0.0489; //0.042464; //0.0931; //0.056559; //0.04 * 0.8;
+>>>>>>> 3d4646fdc27ca8a39c3f5d740c641b241115caf9
     ((UpdateController*)update_controller_pid_roll)->pid_data.kdd = 0.0;
     ((UpdateController*)update_controller_pid_roll)->pid_data.anti_windup = 0;
     ((UpdateController*)update_controller_pid_roll)->pid_data.en_pv_derivation = 1;
     ((UpdateController*)update_controller_pid_roll)->pid_data.dt = 1.f/200.f;
     ((UpdateController*)update_controller_pid_roll)->pid_data.id = block_id::PID_ROLL;
 
+<<<<<<< HEAD
     ((UpdateController*)update_controller_pid_pitch)->pid_data.kp = 0.225 * 0.9; //0.2506;// 0.3360; //0.2811;//0.275252; //0.225 * 0.8; 
     ((UpdateController*)update_controller_pid_pitch)->pid_data.ki = 0.0;
     ((UpdateController*)update_controller_pid_pitch)->pid_data.kd = 0.04 * 0.9; // 0.0578;//0.0684; //0.053100; //0.0868;// 0.051266; //0.04 * 0.8; 
+=======
+    ((UpdateController*)update_controller_pid_pitch)->pid_data.kp = 0.225 * 0.8; // 0.2506;// 0.3360; //0.2811;//0.275252; //0.225 * 0.8; 
+    ((UpdateController*)update_controller_pid_pitch)->pid_data.ki = 0.0;
+    ((UpdateController*)update_controller_pid_pitch)->pid_data.kd =  0.04 * 0.8; // 0.0578;//0.0684; //0.053100; //0.0868;// 0.051266; //0.04 * 0.8; 
+>>>>>>> 3d4646fdc27ca8a39c3f5d740c641b241115caf9
     ((UpdateController*)update_controller_pid_pitch)->pid_data.kdd = 0.0;
     ((UpdateController*)update_controller_pid_pitch)->pid_data.anti_windup = 0;
     ((UpdateController*)update_controller_pid_pitch)->pid_data.en_pv_derivation = 1;
