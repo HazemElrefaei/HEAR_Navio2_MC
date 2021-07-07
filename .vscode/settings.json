@@ -6,4 +6,11 @@
         "/home/ahmed/event_ws/devel/lib/python2.7/dist-packages",
         "/opt/ros/melodic/lib/python2.7/dist-packages"
     ],
+    "python.analysis.extraPaths": [
+        "/home/ahmed/HEAR_ws/devel/lib/python2.7/dist-packages",
+        "/home/ahmed/catkin_ws_other/devel/lib/python2.7/dist-packages",
+        "/home/ahmed/catkin_ws/devel/lib/python2.7/dist-packages",
+        "/home/ahmed/event_ws/devel/lib/python2.7/dist-packages",
+        "/opt/ros/melodic/lib/python2.7/dist-packages"
+    ],
 }

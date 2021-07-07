@@ -11,6 +11,7 @@
 #include "HEAR_mission/SetRestNormSettings.hpp"
 #include "HEAR_mission/SetHeightOffset.hpp"
 #include "HEAR_mission/ResetController.hpp"
+#include "HEAR_mission/SwitchTrigger.hpp"
 #include "HEAR_mission/SetRelativeWaypoint.hpp"
 #include "HEAR_mission/SetAbsoluteWaypoint.hpp"
 #include "HEAR_mission/UpdateController.hpp"
@@ -24,9 +25,9 @@
 #include "HEAR_ROS_BRIDGE/ROSUnit_RestNormSettingsClnt.hpp"
 #include "HEAR_ROS_BRIDGE/ROSUnit_ControlOutputSubscriber.hpp"
 
-// #include "ChangeInternalState.hpp"
-// #include "InternalSystemStateCondition.hpp"
-// #include "StateMonitor.hpp"
+
+const float TAKE_OFF_HEIGHT = 1.0;
+const float LAND_HEIGHT = -0.4;
 
 //#define AUTO_TEST
 #define TESTING
@@ -58,8 +59,8 @@ int main(int argc, char** argv) {
 
 
     ROSUnit* ros_updt_ctr = new ROSUnit_UpdateControllerClnt(nh);
-    ROSUnit* ros_info_sub = new ROSUnit_InfoSubscriber(nh);
-    ROSUnit* ros_restnorm_settings = new ROSUnit_RestNormSettingsClnt(nh);
+    // ROSUnit* ros_info_sub = new ROSUnit_InfoSubscriber(nh);
+    // ROSUnit* ros_restnorm_settings = new ROSUnit_RestNormSettingsClnt(nh);
     
     ROSUnit_Factory ROSUnit_Factory_main{nh};
     ROSUnit* ros_arm_srv = ROSUnit_Factory_main.CreateROSUnit(ROSUnit_tx_rx_type::Client,
@@ -68,28 +69,31 @@ int main(int argc, char** argv) {
     ROSUnit* ros_en_infilt_srv = ROSUnit_Factory_main.CreateROSUnit(ROSUnit_tx_rx_type::Client,
                                                             ROSUnit_msg_type::ROSUnit_Bool, 
                                                             "enable_inner_filter");
+    ROSUnit* ros_en_outfilt_srv = ROSUnit_Factory_main.CreateROSUnit(ROSUnit_tx_rx_type::Client,
+                                                            ROSUnit_msg_type::ROSUnit_Bool, 
+                                                            "enable_outer_filter");
+    ROSUnit* ros_take_off_client = ROSUnit_Factory_main.CreateROSUnit(ROSUnit_tx_rx_type::Client,
+                                                                      ROSUnit_msg_type::ROSUnit_Float,
+                                                                      "take_off");
+    ROSUnit* ros_land_client = ROSUnit_Factory_main.CreateROSUnit(ROSUnit_tx_rx_type::Client,
+                                                                      ROSUnit_msg_type::ROSUnit_Float,
+                                                                      "land");
+    ROSUnit* ros_start_traj_clnt = ROSUnit_Factory_main.CreateROSUnit(ROSUnit_tx_rx_type::Client,
+                                                            ROSUnit_msg_type::ROSUnit_Bool, 
+                                                            "start_trajectory");
 
-    ROSUnit* ros_pos_sub = ROSUnit_Factory_main.CreateROSUnit(ROSUnit_tx_rx_type::Subscriber,
-                                                            ROSUnit_msg_type::ROSUnit_Point,
-                                                            "/pos_horizon");
     ROSUnit* ros_trig_pid_z = ROSUnit_Factory_main.CreateROSUnit(ROSUnit_tx_rx_type::Client,
                                                             ROSUnit_msg_type::ROSUnit_Bool, 
                                                             "pid_z_trig");
-    ROSUnit* ros_rst_ctr = ROSUnit_Factory_main.CreateROSUnit(ROSUnit_tx_rx_type::Client,
-                                                            ROSUnit_msg_type::ROSUnit_Empty,
-                                                            "reset_z");
+    // ROSUnit* ros_rst_ctr = ROSUnit_Factory_main.CreateROSUnit(ROSUnit_tx_rx_type::Client,
+    //                                                         ROSUnit_msg_type::ROSUnit_Empty,
+    //                                                         "reset_z");
     ROSUnit* ros_flight_command = ROSUnit_Factory_main.CreateROSUnit(ROSUnit_tx_rx_type::Server,
                                                                     ROSUnit_msg_type::ROSUnit_Empty,
                                                                     "flight_command");//TODO: Change to user_command
-	ROSUnit* ros_set_path_clnt = ROSUnit_Factory_main.CreateROSUnit(ROSUnit_tx_rx_type::Client,
-                                                                    ROSUnit_msg_type::ROSUnit_Poses,
-                                                                    "uav_control/set_path");
-    ROSUnit* ros_set_height_offset = ROSUnit_Factory_main.CreateROSUnit(ROSUnit_tx_rx_type::Client,
-                                                                    ROSUnit_msg_type::ROSUnit_Float,
-                                                                    "set_height_offset"); 
-    ROSUnit* rosunit_yaw_provider = ROSUnit_Factory_main.CreateROSUnit(ROSUnit_tx_rx_type::Subscriber, 
-                                                                    ROSUnit_msg_type::ROSUnit_Point,
-                                                                    "/providers/yaw");
+	ROSUnit* ros_set_height_offset = ROSUnit_Factory_main.CreateROSUnit(ROSUnit_tx_rx_type::Client,
+                                                                    ROSUnit_msg_type::ROSUnit_Empty,
+                                                                    "init_height"); 
 //     //*****************Flight Elements*************
 
     MissionElement* update_controller_pid_x = new UpdateController();
@@ -100,44 +104,23 @@ int main(int argc, char** argv) {
     MissionElement* update_controller_pid_yaw = new UpdateController();
     MissionElement* update_controller_pid_yaw_rate = new UpdateController();
 
-    MissionElement* reset_z = new ResetController();
+    // MissionElement* reset_z = new ResetController();
 
     MissionElement* arm_motors = new Arm();
     MissionElement* disarm_motors = new Disarm();
     MissionElement* enable_pid_z = new Arm();
     MissionElement* disable_pid_z = new Disarm();
     MissionElement* disable_in_filt = new Disarm();
+    MissionElement* disable_out_filt = new Disarm();
+    MissionElement* start_trajectory = new Arm();
+
+    MissionElement* take_off = new SwitchTrigger(TAKE_OFF_HEIGHT);
+    MissionElement* land = new SwitchTrigger(LAND_HEIGHT);
 
     MissionElement* user_command = new UserCommand();
 
-    // MissionElement* state_monitor = new StateMonitor();
-
-    MissionElement* set_restricted_norm_settings = new SetRestNormSettings(true, false, .5); 
-
-    MissionElement* land_set_rest_norm_settings = new SetRestNormSettings(true, false, 0.15);
-    MissionElement* waypoint_set_rest_norm_settings = new SetRestNormSettings(true, false, 0.40); 
-
-    MissionElement* set_height_offset = new SetHeightOffset(); 
-    MissionElement* initial_pose_waypoint = new SetRelativeWaypoint(0., 0., 0., 0.); //TODO: SetRelativeWaypoint needs substantial refactoring
+    MissionElement* set_height_offset = new Arm(); 
     
-    #ifdef TESTING
-    MissionElement* takeoff_relative_waypoint = new SetRelativeWaypoint(0., 0., 1.0, 0.);
-    MissionElement* forward_waypoint = new SetRelativeWaypoint(0.5, 0., 0.0, 0.);
-    MissionElement* right_waypoint = new SetRelativeWaypoint(0.0, -0.5, 0.0, 0.);
-
-    #endif
-
-    //MissionElement* absolute_zero_Z_relative_waypoint = new SetRelativeWaypoint(0., 0., -10, 0.); 
-    MissionElement* absolute_origin_1m_height = new SetAbsoluteWaypoint(0, 0, 1, 0);
-    MissionElement* absolute_waypoint_square_1 = new SetAbsoluteWaypoint(1.5, 0., 1.0, 0.);
-    MissionElement* absolute_waypoint_square_2 = new SetAbsoluteWaypoint(1.5, 1.5, 1.0, 0.);
-    MissionElement* absolute_waypoint_square_3 = new SetAbsoluteWaypoint(-1.5, 1.5, 1.0, 0.);
-    MissionElement* absolute_waypoint_square_4 = new SetAbsoluteWaypoint(-1.5, -1.5, 1.0, 0.);
-    MissionElement* absolute_waypoint_square_5 = new SetAbsoluteWaypoint(1.5, -1.5, 1.0, 0.);
-    MissionElement* absolute_waypoint_square_6 = new SetAbsoluteWaypoint(1.5, 0.0, 1.0, 0.);
-    MissionElement* absolute_waypoint_square_7 = new SetAbsoluteWaypoint(0.0, 0.0, 1.0, 0.);
-    MissionElement* land_relative_waypoint = new SetRelativeWaypoint(0., 0., -2., 0.);
-
     //******************Connections***************
     update_controller_pid_x->getPorts()[(int)UpdateController::ports_id::OP_0]->connect((ros_updt_ctr)->getPorts()[(int)ROSUnit_UpdateControllerClnt::ports_id::IP_0_PID]);
     update_controller_pid_y->getPorts()[(int)UpdateController::ports_id::OP_0]->connect((ros_updt_ctr)->getPorts()[(int)ROSUnit_UpdateControllerClnt::ports_id::IP_0_PID]);
@@ -147,66 +130,38 @@ int main(int argc, char** argv) {
     update_controller_pid_yaw->getPorts()[(int)UpdateController::ports_id::OP_0]->connect((ros_updt_ctr)->getPorts()[(int)ROSUnit_UpdateControllerClnt::ports_id::IP_0_PID]);
     update_controller_pid_yaw_rate->getPorts()[(int)UpdateController::ports_id::OP_0]->connect((ros_updt_ctr)->getPorts()[(int)ROSUnit_UpdateControllerClnt::ports_id::IP_0_PID]);
 
-    ros_pos_sub->getPorts()[(int)ROSUnit_PointSub::ports_id::OP_0]->connect(initial_pose_waypoint->getPorts()[(int)SetRelativeWaypoint::ports_id::IP_0]);
-    rosunit_yaw_provider->getPorts()[(int)ROSUnit_PointSub::ports_id::OP_1]->connect(initial_pose_waypoint->getPorts()[(int)SetRelativeWaypoint::ports_id::IP_1]);
-    
-    ros_pos_sub->getPorts()[(int)ROSUnit_PointSub::ports_id::OP_0]->connect(takeoff_relative_waypoint->getPorts()[(int)SetRelativeWaypoint::ports_id::IP_0]);
-    rosunit_yaw_provider->getPorts()[(int)ROSUnit_PointSub::ports_id::OP_1]->connect(takeoff_relative_waypoint->getPorts()[(int)SetRelativeWaypoint::ports_id::IP_1]);
-    ros_pos_sub->getPorts()[(int)ROSUnit_PointSub::ports_id::OP_0]->connect(forward_waypoint->getPorts()[(int)SetRelativeWaypoint::ports_id::IP_0]);
-    rosunit_yaw_provider->getPorts()[(int)ROSUnit_PointSub::ports_id::OP_1]->connect(forward_waypoint->getPorts()[(int)SetRelativeWaypoint::ports_id::IP_1]);
-    ros_pos_sub->getPorts()[(int)ROSUnit_PointSub::ports_id::OP_0]->connect(right_waypoint->getPorts()[(int)SetRelativeWaypoint::ports_id::IP_0]);
-    rosunit_yaw_provider->getPorts()[(int)ROSUnit_PointSub::ports_id::OP_1]->connect(right_waypoint->getPorts()[(int)SetRelativeWaypoint::ports_id::IP_1]);
-
-    ros_pos_sub->getPorts()[(int)ROSUnit_PointSub::ports_id::OP_0]->connect(land_relative_waypoint->getPorts()[(int)SetRelativeWaypoint::ports_id::IP_0]);
-    rosunit_yaw_provider->getPorts()[(int)ROSUnit_PointSub::ports_id::OP_1]->connect(land_relative_waypoint->getPorts()[(int)SetRelativeWaypoint::ports_id::IP_1]);
-
-    ros_pos_sub->getPorts()[(int)ROSUnit_PointSub::ports_id::OP_0]->connect(set_height_offset->getPorts()[(int)SetHeightOffset::ports_id::IP_0]);
-
-    reset_z->getPorts()[(int)ResetController::ports_id::OP_0]->connect(ros_rst_ctr->getPorts()[(int)ROSUnit_EmptyClnt::ports_id::IP_0]);
+    // reset_z->getPorts()[(int)ResetController::ports_id::OP_0]->connect(ros_rst_ctr->getPorts()[(int)ROSUnit_EmptyClnt::ports_id::IP_0]);
 
     arm_motors->getPorts()[(int)Arm::ports_id::OP_0]->connect(ros_arm_srv->getPorts()[(int)ROSUnit_SetBoolClnt::ports_id::IP_0]);
     disarm_motors->getPorts()[(int)Disarm::ports_id::OP_0]->connect(ros_arm_srv->getPorts()[(int)ROSUnit_SetBoolClnt::ports_id::IP_0]);
     enable_pid_z->getPorts()[(int)Arm::ports_id::OP_0]->connect(ros_trig_pid_z->getPorts()[(int)ROSUnit_SetBoolClnt::ports_id::IP_0]);
     disable_pid_z->getPorts()[(int)Disarm::ports_id::OP_0]->connect(ros_trig_pid_z->getPorts()[(int)ROSUnit_SetBoolClnt::ports_id::IP_0]);
     disable_in_filt->getPorts()[(int)Disarm::ports_id::OP_0]->connect(ros_en_infilt_srv->getPorts()[(int)ROSUnit_SetBoolClnt::ports_id::IP_0]);
+    disable_out_filt->getPorts()[(int)Disarm::ports_id::OP_0]->connect(ros_en_outfilt_srv->getPorts()[(int)ROSUnit_SetBoolClnt::ports_id::IP_0]);
+    start_trajectory->getPorts()[(int)Arm::ports_id::OP_0]->connect(ros_start_traj_clnt->getPorts()[(int)ROSUnit_SetBoolClnt::ports_id::IP_0]);
 
     ros_flight_command->getPorts()[(int)ROSUnit_EmptySrv::ports_id::OP_0]->connect(user_command->getPorts()[(int)UserCommand::ports_id::IP_0]);
-
-    set_restricted_norm_settings->getPorts()[(int)SetRestNormSettings::ports_id::OP_0]->connect(ros_restnorm_settings->getPorts()[(int)ROSUnit_RestNormSettingsClnt::ports_id::IP_0]);
-    land_set_rest_norm_settings->getPorts()[(int)SetRestNormSettings::ports_id::OP_0]->connect(ros_restnorm_settings->getPorts()[(int)ROSUnit_RestNormSettingsClnt::ports_id::IP_0]);
-    waypoint_set_rest_norm_settings->getPorts()[(int)SetRestNormSettings::ports_id::OP_0]->connect(ros_restnorm_settings->getPorts()[(int)ROSUnit_RestNormSettingsClnt::ports_id::IP_0]);
     
-    set_height_offset->getPorts()[(int)SetHeightOffset::ports_id::OP_0]->connect(ros_set_height_offset->getPorts()[(int)ROSUnit_SetFloatClnt::ports_id::IP_0]);
-    initial_pose_waypoint->getPorts()[(int)SetRelativeWaypoint::ports_id::OP_0]->connect(ros_set_path_clnt->getPorts()[(int)ROSUnit_SetPosesClnt::ports_id::IP_0]);
-    takeoff_relative_waypoint->getPorts()[(int)SetRelativeWaypoint::ports_id::OP_0]->connect(ros_set_path_clnt->getPorts()[(int)ROSUnit_SetPosesClnt::ports_id::IP_0]);
-    forward_waypoint->getPorts()[(int)SetRelativeWaypoint::ports_id::OP_0]->connect(ros_set_path_clnt->getPorts()[(int)ROSUnit_SetPosesClnt::ports_id::IP_0]);
-    right_waypoint->getPorts()[(int)SetRelativeWaypoint::ports_id::OP_0]->connect(ros_set_path_clnt->getPorts()[(int)ROSUnit_SetPosesClnt::ports_id::IP_0]);
+    set_height_offset->getPorts()[(int)Arm::ports_id::OP_0]->connect(ros_set_height_offset->getPorts()[(int)ROSUnit_EmptyClnt::ports_id::IP_0]);
+    take_off->getPorts()[(int)SwitchTrigger::ports_id::OP_0]->connect(ros_take_off_client->getPorts()[(int)ROSUnit_SetFloatClnt::ports_id::IP_0]);
+    land->getPorts()[(int)SwitchTrigger::ports_id::OP_0]->connect(ros_land_client->getPorts()[(int)ROSUnit_SetFloatClnt::ports_id::IP_0]);
 
     //absolute_zero_Z_relative_waypoint->connect(ros_set_path_clnt);
-    absolute_origin_1m_height->getPorts()[(int)SetAbsoluteWaypoint::ports_id::OP_0]->connect(ros_set_path_clnt->getPorts()[(int)ROSUnit_SetPosesClnt::ports_id::IP_0]);
-    absolute_waypoint_square_1->getPorts()[(int)SetAbsoluteWaypoint::ports_id::OP_0]->connect(ros_set_path_clnt->getPorts()[(int)ROSUnit_SetPosesClnt::ports_id::IP_0]);
-    absolute_waypoint_square_2->getPorts()[(int)SetAbsoluteWaypoint::ports_id::OP_0]->connect(ros_set_path_clnt->getPorts()[(int)ROSUnit_SetPosesClnt::ports_id::IP_0]);
-    absolute_waypoint_square_3->getPorts()[(int)SetAbsoluteWaypoint::ports_id::OP_0]->connect(ros_set_path_clnt->getPorts()[(int)ROSUnit_SetPosesClnt::ports_id::IP_0]);
-    absolute_waypoint_square_4->getPorts()[(int)SetAbsoluteWaypoint::ports_id::OP_0]->connect(ros_set_path_clnt->getPorts()[(int)ROSUnit_SetPosesClnt::ports_id::IP_0]);
-    absolute_waypoint_square_5->getPorts()[(int)SetAbsoluteWaypoint::ports_id::OP_0]->connect(ros_set_path_clnt->getPorts()[(int)ROSUnit_SetPosesClnt::ports_id::IP_0]);
-    absolute_waypoint_square_6->getPorts()[(int)SetAbsoluteWaypoint::ports_id::OP_0]->connect(ros_set_path_clnt->getPorts()[(int)ROSUnit_SetPosesClnt::ports_id::IP_0]);
-    absolute_waypoint_square_7->getPorts()[(int)SetAbsoluteWaypoint::ports_id::OP_0]->connect(ros_set_path_clnt->getPorts()[(int)ROSUnit_SetPosesClnt::ports_id::IP_0]);
-    land_relative_waypoint->getPorts()[(int)SetRelativeWaypoint::ports_id::OP_0]->connect(ros_set_path_clnt->getPorts()[(int)ROSUnit_SetPosesClnt::ports_id::IP_0]);
 
     //*************Setting Flight Elements*************
     #ifdef SMALL_HEXA
-    ((UpdateController*)update_controller_pid_x)->pid_data.kp = 0.8786*0.8; //0.51639 * 0.8;
+    ((UpdateController*)update_controller_pid_x)->pid_data.kp = 0.8786; //0.51639 * 0.8;
     ((UpdateController*)update_controller_pid_x)->pid_data.ki = 0.0;
-    ((UpdateController*)update_controller_pid_x)->pid_data.kd = -0.3441*0.8; //0.21192 * 0.8;
+    ((UpdateController*)update_controller_pid_x)->pid_data.kd = -0.3441; //0.21192 * 0.8;
     ((UpdateController*)update_controller_pid_x)->pid_data.kdd = 0.0;
     ((UpdateController*)update_controller_pid_x)->pid_data.anti_windup = 0;
     ((UpdateController*)update_controller_pid_x)->pid_data.en_pv_derivation = 1;
     ((UpdateController*)update_controller_pid_x)->pid_data.dt = (float)1.0/120.0;
     ((UpdateController*)update_controller_pid_x)->pid_data.id = block_id::PID_X;
 
-    ((UpdateController*)update_controller_pid_y)->pid_data.kp = 0.6714*0.9;// 0.51639 * 0.8;
+    ((UpdateController*)update_controller_pid_y)->pid_data.kp = 0.6714;// 0.51639 * 0.8;
     ((UpdateController*)update_controller_pid_y)->pid_data.ki = 0.0;
-    ((UpdateController*)update_controller_pid_y)->pid_data.kd =  -0.2440*0.9;// * 0.8;
+    ((UpdateController*)update_controller_pid_y)->pid_data.kd =  -0.2440;// * 0.8;
     ((UpdateController*)update_controller_pid_y)->pid_data.kdd = 0.0;
     ((UpdateController*)update_controller_pid_y)->pid_data.anti_windup = 0;
     ((UpdateController*)update_controller_pid_y)->pid_data.en_pv_derivation = 1;
@@ -386,7 +341,7 @@ int main(int argc, char** argv) {
     ((UpdateController*)update_controller_pid_yaw_rate)->pid_data.id = block_id::PID_YAW_RATE;
     #endif
 
-    ((ResetController*)reset_z)->target_block = block_id::PID_Z;
+    // ((ResetController*)reset_z)->target_block = block_id::PID_Z;
 
     Wait wait_1s;
     wait_1s.wait_time_ms=1000;
@@ -416,20 +371,19 @@ int main(int argc, char** argv) {
     testing_pipeline.addElement((MissionElement*)update_controller_pid_pitch);
     testing_pipeline.addElement((MissionElement*)&wait_100ms);
     testing_pipeline.addElement((MissionElement*)update_controller_pid_yaw);
-    testing_pipeline.addElement((MissionElement*)&wait_1s);
+    testing_pipeline.addElement((MissionElement*)&wait_100ms);
     testing_pipeline.addElement((MissionElement*)update_controller_pid_yaw_rate);
     testing_pipeline.addElement((MissionElement*)&wait_100ms);
 
     testing_pipeline.addElement((MissionElement*)set_height_offset); //TODO: (CHECK Desc) Set a constant height command/reference based on the current pos
     testing_pipeline.addElement((MissionElement*)&wait_1s);
-    testing_pipeline.addElement((MissionElement*)set_restricted_norm_settings);
-    testing_pipeline.addElement((MissionElement*)initial_pose_waypoint);   
     testing_pipeline.addElement((MissionElement*)user_command);
-    testing_pipeline.addElement((MissionElement*)reset_z); //Reset I-term to zero
+    // testing_pipeline.addElement((MissionElement*)reset_z); //Reset I-term to zero
+    testing_pipeline.addElement((MissionElement*)disable_in_filt);
+    testing_pipeline.addElement((MissionElement*)disable_out_filt);
     testing_pipeline.addElement((MissionElement*)&wait_100ms);
     testing_pipeline.addElement((MissionElement*)arm_motors);
-    testing_pipeline.addElement((MissionElement*)disable_in_filt);
-    testing_pipeline.addElement((MissionElement*)disable_pid_z);
+    // testing_pipeline.addElement((MissionElement*)disable_pid_z);
 
     #ifdef AUTO_TEST
     testing_pipeline.addElement((MissionElement*)&wait_1s);
@@ -437,12 +391,13 @@ int main(int argc, char** argv) {
     testing_pipeline.addElement((MissionElement*)user_command);
     #endif
     
-    testing_pipeline.addElement((MissionElement*)reset_z); //Reset I-term to zero
+    // testing_pipeline.addElement((MissionElement*)reset_z); //Reset I-term to zero
     testing_pipeline.addElement((MissionElement*)arm_motors);
-    testing_pipeline.addElement((MissionElement*)takeoff_relative_waypoint);
-    testing_pipeline.addElement((MissionElement*)&wait_1s);
-    testing_pipeline.addElement((MissionElement*)&wait_340ms);
-    testing_pipeline.addElement((MissionElement*)enable_pid_z);
+    testing_pipeline.addElement((MissionElement*)take_off);
+
+    // testing_pipeline.addElement((MissionElement*)&wait_1s);
+    // testing_pipeline.addElement((MissionElement*)&wait_340ms);
+    // testing_pipeline.addElement((MissionElement*)enable_pid_z);
 
     #ifdef AUTO_TEST
     testing_pipeline.addElement((MissionElement*)&wait_5s);
@@ -450,10 +405,13 @@ int main(int argc, char** argv) {
     testing_pipeline.addElement((MissionElement*)user_command);
     #endif
 
-    testing_pipeline.addElement((MissionElement*)forward_waypoint);
+    testing_pipeline.addElement((MissionElement*)start_trajectory);
     testing_pipeline.addElement((MissionElement*)user_command);
-    testing_pipeline.addElement((MissionElement*)right_waypoint);
-    testing_pipeline.addElement((MissionElement*)user_command);
+
+    // testing_pipeline.addElement((MissionElement*)forward_waypoint);
+    // testing_pipeline.addElement((MissionElement*)user_command);
+    // testing_pipeline.addElement((MissionElement*)right_waypoint);
+    // testing_pipeline.addElement((MissionElement*)user_command);
 
     // testing_pipeline.addElement((MissionElement*)waypoint_set_rest_norm_settings);   
     // testing_pipeline.addElement((MissionElement*)&wait_100ms);
@@ -466,9 +424,11 @@ int main(int argc, char** argv) {
     // testing_pipeline.addElement((MissionElement*)absolute_waypoint_square_6);
     // testing_pipeline.addElement((MissionElement*)absolute_waypoint_square_7);
     // testing_pipeline.addElement((MissionElement*)user_command);
-    testing_pipeline.addElement((MissionElement*)land_set_rest_norm_settings);   
-    testing_pipeline.addElement((MissionElement*)&wait_100ms);
-    testing_pipeline.addElement((MissionElement*)land_relative_waypoint);
+    // testing_pipeline.addElement((MissionElement*)land_set_rest_norm_settings);   
+    // testing_pipeline.addElement((MissionElement*)&wait_100ms);
+    // testing_pipeline.addElement((MissionElement*)land_relative_waypoint);
+
+    testing_pipeline.addElement((MissionElement*)land);
     #endif
 
     Logger::getAssignedLogger()->log("FlightScenario main_scenario",LoggerLevel::Info);
