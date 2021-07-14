@@ -37,6 +37,9 @@
 //#define STEP_X
 
 const float SLAM_FREQ = 30.0;
+const float TAKE_OFF_HEIGHT = 1.0;
+const float LAND_HEIGHT = -0.3;
+
 
 int main(int argc, char** argv) {
     Logger::assignLogger(new StdLogger());
@@ -46,16 +49,26 @@ int main(int argc, char** argv) {
     ros::NodeHandle nh;
 
     ROSUnit* ros_updt_ctr = new ROSUnit_UpdateControllerClnt(nh);
-    ROSUnit* ros_info_sub = new ROSUnit_InfoSubscriber(nh);
-    ROSUnit* ros_restnorm_settings = new ROSUnit_RestNormSettingsClnt(nh);
     
     ROSUnit_Factory ROSUnit_Factory_main{nh};
     ROSUnit* ros_arm_srv = ROSUnit_Factory_main.CreateROSUnit(ROSUnit_tx_rx_type::Client,
                                                             ROSUnit_msg_type::ROSUnit_Bool, 
                                                             "arm");
+    ROSUnit* set_vo_offset_srv = ROSUnit_Factory_main.CreateROSUnit(ROSUnit_tx_rx_type::Client,
+                                                            ROSUnit_msg_type::ROSUnit_Bool, 
+                                                            "set_map_frame_offset");
     ROSUnit* ros_en_infilt_srv = ROSUnit_Factory_main.CreateROSUnit(ROSUnit_tx_rx_type::Client,
-                                                        ROSUnit_msg_type::ROSUnit_Bool, 
-                                                        "enable_inner_filter");
+                                                            ROSUnit_msg_type::ROSUnit_Bool, 
+                                                            "enable_inner_filter");
+    ROSUnit* ros_en_outfilt_srv = ROSUnit_Factory_main.CreateROSUnit(ROSUnit_tx_rx_type::Client,
+                                                            ROSUnit_msg_type::ROSUnit_Bool, 
+                                                            "enable_outer_filter");
+    ROSUnit* ros_take_off_client = ROSUnit_Factory_main.CreateROSUnit(ROSUnit_tx_rx_type::Client,
+                                                                      ROSUnit_msg_type::ROSUnit_Float,
+                                                                      "take_off");
+    ROSUnit* ros_land_client = ROSUnit_Factory_main.CreateROSUnit(ROSUnit_tx_rx_type::Client,
+                                                                      ROSUnit_msg_type::ROSUnit_Float,
+                                                                      "land");
 
 #ifdef  MRFT_X_SLAM
     ROSUnit* ros_mrft_trigger_x = ROSUnit_Factory_main.CreateROSUnit(ROSUnit_tx_rx_type::Client,
@@ -96,28 +109,12 @@ int main(int argc, char** argv) {
     ROSUnit* ros_trig_pid_z = ROSUnit_Factory_main.CreateROSUnit(ROSUnit_tx_rx_type::Client,
                                                             ROSUnit_msg_type::ROSUnit_Bool, 
                                                             "pid_z_trig");
-    ROSUnit* ros_pos_sub = ROSUnit_Factory_main.CreateROSUnit(ROSUnit_tx_rx_type::Subscriber,
-                                                            ROSUnit_msg_type::ROSUnit_Point,
-                                                            "/pos_horizon");
-    ROSUnit* ros_rst_ctr = ROSUnit_Factory_main.CreateROSUnit(ROSUnit_tx_rx_type::Client,
-                                                            ROSUnit_msg_type::ROSUnit_Empty,
-                                                            "reset_z");
     ROSUnit* ros_flight_command = ROSUnit_Factory_main.CreateROSUnit(ROSUnit_tx_rx_type::Server,
                                                                     ROSUnit_msg_type::ROSUnit_Empty,
                                                                     "flight_command");//TODO: Change to user_command
-	ROSUnit* ros_set_path_clnt = ROSUnit_Factory_main.CreateROSUnit(ROSUnit_tx_rx_type::Client,
-                                                                    ROSUnit_msg_type::ROSUnit_Poses,
-                                                                    "uav_control/set_path");
     ROSUnit* ros_set_height_offset = ROSUnit_Factory_main.CreateROSUnit(ROSUnit_tx_rx_type::Client,
                                                                     ROSUnit_msg_type::ROSUnit_Float,
                                                                     "set_height_offset"); 
-    ROSUnit* rosunit_set_map_frame_offset = ROSUnit_Factory_main.CreateROSUnit(ROSUnit_tx_rx_type::Client,
-                                                                            ROSUnit_msg_type::ROSUnit_Bool,
-                                                                            "set_map_frame_offset");
-                                                                   
-    ROSUnit* rosunit_yaw_provider = ROSUnit_Factory_main.CreateROSUnit(ROSUnit_tx_rx_type::Subscriber, 
-                                                                    ROSUnit_msg_type::ROSUnit_Point,
-                                                                    "/providers/yaw");
 //     //*****************Flight Elements*************
 
     MissionElement* update_controller_pid_x = new UpdateController();
@@ -164,29 +161,20 @@ int main(int argc, char** argv) {
     MissionElement* pid_slam_switch_off_z = new SwitchTrigger(1);
     #endif
 
-    MissionElement* reset_z = new ResetController();
-
     MissionElement* arm_motors = new Arm();
     MissionElement* disarm_motors = new Disarm();
     MissionElement* enable_pid_z = new Arm();
     MissionElement* disable_pid_z = new Disarm();
     MissionElement* disable_in_filt = new Disarm();
+    MissionElement* disable_out_filt = new Disarm();
+    MissionElement* set_vo_offset = new Arm();
+
+    MissionElement* take_off = new SwitchTrigger(TAKE_OFF_HEIGHT);
+    MissionElement* land = new SwitchTrigger(LAND_HEIGHT);
 
     MissionElement* user_command = new UserCommand();
 
-    // MissionElement* state_monitor = new StateMonitor();
-
-    MissionElement* set_restricted_norm_settings = new SetRestNormSettings(true, false, 0.5); 
-
-    MissionElement* land_set_rest_norm_settings = new SetRestNormSettings(true, false, 0.15);
-
-    MissionElement* set_height_offset = new SetHeightOffset();
-    MissionElement* send_set_map_offset_signal = new SendBoolSignal(true); 
-    MissionElement* initial_pose_waypoint = new SetRelativeWaypoint(0., 0., 0., 0.); //TODO: SetRelativeWaypoint needs substantial refactoring
-
-    MissionElement* takeoff_relative_waypoint = new SetRelativeWaypoint(0., 0., 1.0, 0.);
-    MissionElement* step_relative_waypoint_x = new SetRelativeWaypoint(0.5, 0., 0.0, 0.);
-    MissionElement* land_relative_waypoint = new SetRelativeWaypoint(0., 0., -1.5, 0.);
+    MissionElement* set_height_offset = new Arm();
 
     //******************Connections***************
     update_controller_pid_x->getPorts()[(int)UpdateController::ports_id::OP_0]->connect(ros_updt_ctr->getPorts()[(int)ROSUnit_UpdateControllerClnt::ports_id::IP_0_PID]);
@@ -233,41 +221,20 @@ int main(int argc, char** argv) {
     pid_slam_switch_off_z->getPorts()[(int)SwitchTrigger::ports_id::OP_0]->connect(ros_slam_pid_trigger_z->getPorts()[(int)ROSUnit_SetFloatClnt::ports_id::IP_0]);
     #endif
 
-    ros_pos_sub->getPorts()[(int)ROSUnit_PointSub::ports_id::OP_0]->connect(initial_pose_waypoint->getPorts()[(int)SetRelativeWaypoint::ports_id::IP_0]);
-    rosunit_yaw_provider->getPorts()[(int)ROSUnit_PointSub::ports_id::OP_1]->connect(initial_pose_waypoint->getPorts()[(int)SetRelativeWaypoint::ports_id::IP_1]);
-    
-    ros_pos_sub->getPorts()[(int)ROSUnit_PointSub::ports_id::OP_0]->connect(takeoff_relative_waypoint->getPorts()[(int)SetRelativeWaypoint::ports_id::IP_0]);
-    rosunit_yaw_provider->getPorts()[(int)ROSUnit_PointSub::ports_id::OP_1]->connect(takeoff_relative_waypoint->getPorts()[(int)SetRelativeWaypoint::ports_id::IP_1]);
-
-    ros_pos_sub->getPorts()[(int)ROSUnit_PointSub::ports_id::OP_0]->connect(land_relative_waypoint->getPorts()[(int)SetRelativeWaypoint::ports_id::IP_0]);
-    rosunit_yaw_provider->getPorts()[(int)ROSUnit_PointSub::ports_id::OP_1]->connect(land_relative_waypoint->getPorts()[(int)SetRelativeWaypoint::ports_id::IP_1]);
-
-    ros_pos_sub->getPorts()[(int)ROSUnit_PointSub::ports_id::OP_0]->connect(step_relative_waypoint_x->getPorts()[(int)SetRelativeWaypoint::ports_id::IP_0]);
-    rosunit_yaw_provider->getPorts()[(int)ROSUnit_PointSub::ports_id::OP_1]->connect(step_relative_waypoint_x->getPorts()[(int)SetRelativeWaypoint::ports_id::IP_1]);
-    
-    ros_pos_sub->getPorts()[(int)ROSUnit_PointSub::ports_id::OP_0]->connect(set_height_offset->getPorts()[(int)SetHeightOffset::ports_id::IP_0]);
-
-    reset_z->getPorts()[(int)ResetController::ports_id::OP_0]->connect(ros_rst_ctr->getPorts()[(int)ROSUnit_EmptyClnt::ports_id::IP_0]);
-
     arm_motors->getPorts()[(int)Arm::ports_id::OP_0]->connect(ros_arm_srv->getPorts()[(int)ROSUnit_SetBoolClnt::ports_id::IP_0]);
     disarm_motors->getPorts()[(int)Disarm::ports_id::OP_0]->connect(ros_arm_srv->getPorts()[(int)ROSUnit_SetBoolClnt::ports_id::IP_0]);
     enable_pid_z->getPorts()[(int)Arm::ports_id::OP_0]->connect(ros_trig_pid_z->getPorts()[(int)ROSUnit_SetBoolClnt::ports_id::IP_0]);
     disable_pid_z->getPorts()[(int)Disarm::ports_id::OP_0]->connect(ros_trig_pid_z->getPorts()[(int)ROSUnit_SetBoolClnt::ports_id::IP_0]);
     disable_in_filt->getPorts()[(int)Disarm::ports_id::OP_0]->connect(ros_en_infilt_srv->getPorts()[(int)ROSUnit_SetBoolClnt::ports_id::IP_0]);
+    disable_out_filt->getPorts()[(int)Disarm::ports_id::OP_0]->connect(ros_en_outfilt_srv->getPorts()[(int)ROSUnit_SetBoolClnt::ports_id::IP_0]);
+    set_vo_offset->getPorts()[(int)Arm::ports_id::OP_0]->connect(set_vo_offset_srv->getPorts()[(int)ROSUnit_SetBoolClnt::ports_id::IP_0]);
 
     ros_flight_command->getPorts()[(int)ROSUnit_EmptySrv::ports_id::OP_0]->connect(user_command->getPorts()[(int)UserCommand::ports_id::IP_0]);
 
-    set_restricted_norm_settings->getPorts()[(int)SetRestNormSettings::ports_id::OP_0]->connect(ros_restnorm_settings->getPorts()[(int)ROSUnit_RestNormSettingsClnt::ports_id::IP_0]);
-    land_set_rest_norm_settings->getPorts()[(int)SetRestNormSettings::ports_id::OP_0]->connect(ros_restnorm_settings->getPorts()[(int)ROSUnit_RestNormSettingsClnt::ports_id::IP_0]);
       
     set_height_offset->getPorts()[(int)SetHeightOffset::ports_id::OP_0]->connect(ros_set_height_offset->getPorts()[(int)ROSUnit_SetFloatClnt::ports_id::IP_0]);
-    send_set_map_offset_signal->getPorts()[(int)SendBoolSignal::ports_id::OP_0]->connect(rosunit_set_map_frame_offset->getPorts()[(int)ROSUnit_SetBoolClnt::ports_id::IP_0]);
-    initial_pose_waypoint->getPorts()[(int)SetRelativeWaypoint::ports_id::OP_0]->connect(ros_set_path_clnt->getPorts()[(int)ROSUnit_SetPosesClnt::ports_id::IP_0]);
-    takeoff_relative_waypoint->getPorts()[(int)SetRelativeWaypoint::ports_id::OP_0]->connect(ros_set_path_clnt->getPorts()[(int)ROSUnit_SetPosesClnt::ports_id::IP_0]);
-    step_relative_waypoint_x->getPorts()[(int)SetRelativeWaypoint::ports_id::OP_0]->connect(ros_set_path_clnt->getPorts()[(int)ROSUnit_SetPosesClnt::ports_id::IP_0]);
-
-    //absolute_zero_Z_relative_waypoint->connect(ros_set_path_clnt);
-    land_relative_waypoint->getPorts()[(int)SetRelativeWaypoint::ports_id::OP_0]->connect(ros_set_path_clnt->getPorts()[(int)ROSUnit_SetPosesClnt::ports_id::IP_0]);
+    take_off->getPorts()[(int)SwitchTrigger::ports_id::OP_0]->connect(ros_take_off_client->getPorts()[(int)ROSUnit_SetFloatClnt::ports_id::IP_0]);
+    land->getPorts()[(int)SwitchTrigger::ports_id::OP_0]->connect(ros_land_client->getPorts()[(int)ROSUnit_SetFloatClnt::ports_id::IP_0]);
 
     //*************Setting Flight Elements*************
 
@@ -392,8 +359,6 @@ int main(int argc, char** argv) {
     ((UpdateController*)update_controller_pid_salm_z)->pid_data.id = block_id::PID_SLAM_Z;
 #endif
 
-    ((ResetController*)reset_z)->target_block = block_id::PID_Z;
-
     Wait wait_1s;
     wait_1s.wait_time_ms=1000;
 
@@ -421,10 +386,9 @@ int main(int argc, char** argv) {
     mrft_pipeline.addElement((MissionElement*)update_controller_pid_pitch);
     mrft_pipeline.addElement((MissionElement*)&wait_100ms);
     mrft_pipeline.addElement((MissionElement*)update_controller_pid_yaw);
-    mrft_pipeline.addElement((MissionElement*)&wait_1s);
+    mrft_pipeline.addElement((MissionElement*)&wait_100ms);
     mrft_pipeline.addElement((MissionElement*)update_controller_pid_yaw_rate);
     mrft_pipeline.addElement((MissionElement*)&wait_100ms);
-
 
     #ifdef MRFT_X_SLAM
     mrft_pipeline.addElement((MissionElement*)update_controller_mrft_x);
@@ -452,23 +416,15 @@ int main(int argc, char** argv) {
 
     mrft_pipeline.addElement((MissionElement*)set_height_offset); //TODO: (CHECK Desc) Set a constant height command/reference based on the current pos
     mrft_pipeline.addElement((MissionElement*)&wait_1s);
-    mrft_pipeline.addElement((MissionElement*)set_restricted_norm_settings);
-    mrft_pipeline.addElement((MissionElement*)initial_pose_waypoint);
     mrft_pipeline.addElement((MissionElement*)user_command);
-    mrft_pipeline.addElement((MissionElement*)send_set_map_offset_signal);
-    mrft_pipeline.addElement((MissionElement*)reset_z); //Reset I-term to zero
+    mrft_pipeline.addElement((MissionElement*)set_vo_offset);
+    mrft_pipeline.addElement((MissionElement*)disable_in_filt);
     mrft_pipeline.addElement((MissionElement*)&wait_100ms);
     mrft_pipeline.addElement((MissionElement*)arm_motors);
-    mrft_pipeline.addElement((MissionElement*)disable_in_filt);
-    mrft_pipeline.addElement((MissionElement*)disable_pid_z);
  
     mrft_pipeline.addElement((MissionElement*)user_command);
-    mrft_pipeline.addElement((MissionElement*)reset_z); //Reset I-term to zero
     mrft_pipeline.addElement((MissionElement*)arm_motors);
-    mrft_pipeline.addElement((MissionElement*)takeoff_relative_waypoint);
-    mrft_pipeline.addElement((MissionElement*)&wait_1s);
-    mrft_pipeline.addElement((MissionElement*)&wait_340ms);
-    mrft_pipeline.addElement((MissionElement*)enable_pid_z);
+    mrft_pipeline.addElement((MissionElement*)take_off);
 
     mrft_pipeline.addElement((MissionElement*)user_command);
 //    mrft_pipeline.addElement((MissionElement*)&wait_5s);
@@ -505,8 +461,6 @@ int main(int argc, char** argv) {
     mrft_pipeline.addElement((MissionElement*)user_command);  
 //    mrft_pipeline.addElement((MissionElement*)&wait_5s);
 
-    mrft_pipeline.addElement((MissionElement*)initial_pose_waypoint);
-
     #ifdef MRFT_X_SLAM
     mrft_pipeline.addElement((MissionElement*)mrft_switch_off_x);
     #endif
@@ -534,9 +488,7 @@ int main(int argc, char** argv) {
     mrft_pipeline.addElement((MissionElement*)user_command);
 //    mrft_pipeline.addElement((MissionElement*)&wait_1s);
     
-    mrft_pipeline.addElement((MissionElement*)land_set_rest_norm_settings);   
-    mrft_pipeline.addElement((MissionElement*)&wait_100ms);
-    mrft_pipeline.addElement((MissionElement*)land_relative_waypoint);
+    mrft_pipeline.addElement((MissionElement*)land);   
 
 
     Logger::getAssignedLogger()->log("FlightScenario main_scenario",LoggerLevel::Info);
