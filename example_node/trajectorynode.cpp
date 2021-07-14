@@ -16,7 +16,8 @@ const float LAND_VELOCITY = 0.75; // in m/s
 const std::string file_path_x = "/home/ahmed/waypoints_x.csv";
 const std::string file_path_y = "/home/ahmed/waypoints_y.csv";
 const std::string file_path_z = "/home/ahmed/waypoints_z.csv";
-
+const std::string file_path_vel_x = "/home/ahmed/waypoints_vel_x.csv";
+const std::string file_path_vel_y = "/home/ahmed/waypoints_vel_y.csv";
 
 bool start_traj = false;
 bool take_off_flag = false;
@@ -95,8 +96,11 @@ int main(int argc, char **argv){
     ros::Publisher pub_waypoint_z = nh.advertise<std_msgs::Float32>("/waypoint_reference/z", 10);
     ros::Publisher pub_waypoint_yaw = nh.advertise<std_msgs::Float32>("/waypoint_reference/yaw", 10);
 
-    std::vector<float> wp_x, wp_y, wp_z;
-    bool en_wp_x, en_wp_y, en_wp_z;
+    ros::Publisher pub_waypoint_vel_x = nh.advertise<std_msgs::Float32>("/waypoint_reference/vel/x", 10);
+    ros::Publisher pub_waypoint_vel_y = nh.advertise<std_msgs::Float32>("/waypoint_reference/vel/y", 10);
+
+    std::vector<float> wp_x, wp_y, wp_z, wp_vel_x, wp_vel_y;
+    bool en_wp_x, en_wp_y, en_wp_z, en_wp_vel_x, en_wp_vel_y;
  
     if(!(read_file(file_path_x, wp_x))){
         ROS_WARN("Could not read file for x waypoints.\n ...Disabling trajectory for x channel");
@@ -111,18 +115,38 @@ int main(int argc, char **argv){
         en_wp_z = false;
     }else{ en_wp_z = true; }
 
+    if(!(read_file(file_path_vel_x, wp_vel_x))){
+        ROS_WARN("Could not read file for x waypoints.\n ...Disabling velocity reference for x channel");
+        en_wp_vel_x = false;
+    }else{ en_wp_vel_x = true; }
+    if(!(read_file(file_path_vel_y, wp_vel_y))){
+        ROS_WARN("Could not read file for x waypoints.\n ...Disabling velocity reference for y channel");
+        en_wp_vel_y = false;
+    }else{ en_wp_vel_y = true; }
+
+
     int i = 0;
     int sz_x = wp_x.size(), sz_y = wp_y.size(),  sz_z = wp_z.size();
+    if(en_wp_vel_x){ 
+        if(wp_vel_x.size() != sz_x){
+            ROS_ERROR("Size of velocity reference vector is not equal to position reference");
+            return 1;
+        }
+    }
+    if(en_wp_vel_y){ 
+        if(wp_vel_y.size() != sz_y){
+            ROS_ERROR("Size of velocity reference vector is not equal to position reference");
+            return 1;
+        }
+    }
 
-    std_msgs::Float32 wp_x_msg, wp_y_msg, wp_z_msg;
+    std_msgs::Float32 wp_x_msg, wp_y_msg, wp_z_msg, wp_vel_x_msg, wp_vel_y_msg;
     float z_ref = 0.0;
     bool take_off_started = false;
     bool land_started = false;
     bool trajectory_finished = false, trajectory_started = false;
     while(ros::ok()){
         if(land_flag){
-            start_traj = false;
-            take_off_flag = false;
             if(!land_started){
                 ROS_INFO("land started");                
                 land_started = true;
@@ -143,8 +167,7 @@ int main(int argc, char **argv){
                 pub_waypoint_z.publish(wp_z_msg);
             }
         }
-        if(take_off_flag){
-            start_traj = false;
+        else if(take_off_flag){
             if(!take_off_started){
                 ROS_INFO("take off started");
                 take_off_started = true;
@@ -166,7 +189,7 @@ int main(int argc, char **argv){
                 pub_waypoint_z.publish(wp_z_msg);
             }
         }
-        if(start_traj){
+        else if(start_traj){
             trajectory_finished = true;
             if(!trajectory_started){
                 ROS_INFO("Trajectory Started");
@@ -175,11 +198,19 @@ int main(int argc, char **argv){
             if(i < sz_x && en_wp_x){
                 wp_x_msg.data = wp_x[i];
                 pub_waypoint_x.publish(wp_x_msg);
+                if(en_wp_vel_x){
+                    wp_vel_x_msg.data = wp_vel_x[i];
+                    pub_waypoint_vel_x.publish(wp_vel_x_msg);
+                }
                 trajectory_finished = false;
             }
             if(i < sz_y && en_wp_y){
                 wp_y_msg.data = wp_y[i];
                 pub_waypoint_y.publish(wp_y_msg);
+                if(en_wp_vel_y){
+                    wp_vel_y_msg.data = wp_vel_y[i];
+                    pub_waypoint_vel_y.publish(wp_vel_y_msg);
+                }
                 trajectory_finished = false;
             }
             if(i < sz_z && en_wp_z){
