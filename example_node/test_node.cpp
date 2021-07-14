@@ -27,7 +27,7 @@
 
 
 const float TAKE_OFF_HEIGHT = 1.0;
-const float LAND_HEIGHT = -0.4;
+const float LAND_HEIGHT = -0.3;
 
 //#define AUTO_TEST
 #define TESTING
@@ -66,6 +66,9 @@ int main(int argc, char** argv) {
     ROSUnit* ros_arm_srv = ROSUnit_Factory_main.CreateROSUnit(ROSUnit_tx_rx_type::Client,
                                                             ROSUnit_msg_type::ROSUnit_Bool, 
                                                             "arm");
+    ROSUnit* set_vo_offset_srv = ROSUnit_Factory_main.CreateROSUnit(ROSUnit_tx_rx_type::Client,
+                                                            ROSUnit_msg_type::ROSUnit_Bool, 
+                                                            "set_map_frame_offset");
     ROSUnit* ros_en_infilt_srv = ROSUnit_Factory_main.CreateROSUnit(ROSUnit_tx_rx_type::Client,
                                                             ROSUnit_msg_type::ROSUnit_Bool, 
                                                             "enable_inner_filter");
@@ -113,6 +116,7 @@ int main(int argc, char** argv) {
     MissionElement* disable_in_filt = new Disarm();
     MissionElement* disable_out_filt = new Disarm();
     MissionElement* start_trajectory = new Arm();
+    MissionElement* set_vo_offset = new Arm();
 
     MissionElement* take_off = new SwitchTrigger(TAKE_OFF_HEIGHT);
     MissionElement* land = new SwitchTrigger(LAND_HEIGHT);
@@ -139,6 +143,7 @@ int main(int argc, char** argv) {
     disable_in_filt->getPorts()[(int)Disarm::ports_id::OP_0]->connect(ros_en_infilt_srv->getPorts()[(int)ROSUnit_SetBoolClnt::ports_id::IP_0]);
     disable_out_filt->getPorts()[(int)Disarm::ports_id::OP_0]->connect(ros_en_outfilt_srv->getPorts()[(int)ROSUnit_SetBoolClnt::ports_id::IP_0]);
     start_trajectory->getPorts()[(int)Arm::ports_id::OP_0]->connect(ros_start_traj_clnt->getPorts()[(int)ROSUnit_SetBoolClnt::ports_id::IP_0]);
+    set_vo_offset->getPorts()[(int)Arm::ports_id::OP_0]->connect(set_vo_offset_srv->getPorts()[(int)ROSUnit_SetBoolClnt::ports_id::IP_0]);
 
     ros_flight_command->getPorts()[(int)ROSUnit_EmptySrv::ports_id::OP_0]->connect(user_command->getPorts()[(int)UserCommand::ports_id::IP_0]);
     
