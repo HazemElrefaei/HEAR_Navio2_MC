@@ -112,9 +112,9 @@ int main(int argc, char** argv) {
     ROSUnit* ros_flight_command = ROSUnit_Factory_main.CreateROSUnit(ROSUnit_tx_rx_type::Server,
                                                                     ROSUnit_msg_type::ROSUnit_Empty,
                                                                     "flight_command");//TODO: Change to user_command
-    ROSUnit* ros_set_height_offset = ROSUnit_Factory_main.CreateROSUnit(ROSUnit_tx_rx_type::Client,
-                                                                    ROSUnit_msg_type::ROSUnit_Float,
-                                                                    "set_height_offset"); 
+	ROSUnit* ros_set_height_offset = ROSUnit_Factory_main.CreateROSUnit(ROSUnit_tx_rx_type::Client,
+                                                                    ROSUnit_msg_type::ROSUnit_Empty,
+                                                                    "init_height"); 
 //     //*****************Flight Elements*************
 
     MissionElement* update_controller_pid_x = new UpdateController();
@@ -232,7 +232,7 @@ int main(int argc, char** argv) {
     ros_flight_command->getPorts()[(int)ROSUnit_EmptySrv::ports_id::OP_0]->connect(user_command->getPorts()[(int)UserCommand::ports_id::IP_0]);
 
       
-    set_height_offset->getPorts()[(int)SetHeightOffset::ports_id::OP_0]->connect(ros_set_height_offset->getPorts()[(int)ROSUnit_SetFloatClnt::ports_id::IP_0]);
+    set_height_offset->getPorts()[(int)Arm::ports_id::OP_0]->connect(ros_set_height_offset->getPorts()[(int)ROSUnit_EmptyClnt::ports_id::IP_0]);
     take_off->getPorts()[(int)SwitchTrigger::ports_id::OP_0]->connect(ros_take_off_client->getPorts()[(int)ROSUnit_SetFloatClnt::ports_id::IP_0]);
     land->getPorts()[(int)SwitchTrigger::ports_id::OP_0]->connect(ros_land_client->getPorts()[(int)ROSUnit_SetFloatClnt::ports_id::IP_0]);
 
@@ -305,7 +305,7 @@ int main(int argc, char** argv) {
     ((UpdateController*)update_controller_mrft_x)->mrft_data.beta = -0.735;
     ((UpdateController*)update_controller_mrft_x)->mrft_data.relay_amp = 0.07;
     ((UpdateController*)update_controller_mrft_x)->mrft_data.bias = 0.0;
-    ((UpdateController*)update_controller_mrft_x)->mrft_data.num_of_peak_conf_samples = 2;
+    ((UpdateController*)update_controller_mrft_x)->mrft_data.num_of_peak_conf_samples = 5;
     ((UpdateController*)update_controller_mrft_x)->mrft_data.no_switch_delay_in_ms = 100;
     ((UpdateController*)update_controller_mrft_x)->mrft_data.id = block_id::MRFT_X;
 #endif
@@ -417,9 +417,9 @@ int main(int argc, char** argv) {
     mrft_pipeline.addElement((MissionElement*)set_height_offset); //TODO: (CHECK Desc) Set a constant height command/reference based on the current pos
     mrft_pipeline.addElement((MissionElement*)&wait_1s);
     mrft_pipeline.addElement((MissionElement*)user_command);
-    mrft_pipeline.addElement((MissionElement*)set_vo_offset);
     mrft_pipeline.addElement((MissionElement*)disable_in_filt);
     mrft_pipeline.addElement((MissionElement*)&wait_100ms);
+    mrft_pipeline.addElement((MissionElement*)set_vo_offset);
     mrft_pipeline.addElement((MissionElement*)arm_motors);
  
     mrft_pipeline.addElement((MissionElement*)user_command);
