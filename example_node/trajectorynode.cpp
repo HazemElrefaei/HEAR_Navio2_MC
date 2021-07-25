@@ -13,11 +13,11 @@
 
 const float TAKE_OFF_VELOCITY = 0.5; //in m/s
 const float LAND_VELOCITY = 0.75; // in m/s
-const std::string file_path_x = "/home/ahmed/waypoints_x.csv";
-const std::string file_path_y = "/home/ahmed/waypoints_y.csv";
-const std::string file_path_z = "/home/ahmed/waypoints_z.csv";
-const std::string file_path_vel_x = "/home/ahmed/waypoints_vel_x.csv";
-const std::string file_path_vel_y = "/home/ahmed/waypoints_vel_y.csv";
+const std::string file_path_x = "/home/ahmed/Waypoints/waypoints_x.csv";
+const std::string file_path_y = "/home/ahmed/Waypoints/waypoints_y.csv";
+const std::string file_path_z = "/home/ahmed/Waypoints/waypoints_z.csv";
+const std::string file_path_vel_x = "/home/ahmed/Waypoints/waypoints_vel_x.csv";
+const std::string file_path_vel_y = "/home/ahmed/Waypoints/waypoints_vel_y.csv";
 
 bool start_traj = false;
 bool take_off_flag = false;
