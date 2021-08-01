@@ -27,7 +27,7 @@
 
 
 const float TAKE_OFF_HEIGHT = 1.0;
-const float LAND_HEIGHT = -0.3;
+const float LAND_HEIGHT = -0.2;
 
 //#define AUTO_TEST
 #define TESTING
@@ -410,8 +410,8 @@ int main(int argc, char** argv) {
     testing_pipeline.addElement((MissionElement*)user_command);
     #endif
 
-    testing_pipeline.addElement((MissionElement*)start_trajectory);
-    testing_pipeline.addElement((MissionElement*)user_command);
+    // testing_pipeline.addElement((MissionElement*)start_trajectory);
+    // testing_pipeline.addElement((MissionElement*)user_command);
 
     // testing_pipeline.addElement((MissionElement*)forward_waypoint);
     // testing_pipeline.addElement((MissionElement*)user_command);
