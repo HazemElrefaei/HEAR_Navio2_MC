@@ -121,20 +121,20 @@ int main(int argc, char **argv){
     }else{ en_wp_z = true; }
 
     if(!(read_file(file_path_vel_x, wp_vel_x))){
-        ROS_WARN("Could not read file for x waypoints.\n ...Disabling velocity reference for x channel");
+        ROS_WARN("Could not read file for vel_x waypoints.\n ...Disabling velocity reference for x channel");
         en_wp_vel_x = false;
     }else{ en_wp_vel_x = true; }
     if(!(read_file(file_path_vel_y, wp_vel_y))){
-        ROS_WARN("Could not read file for x waypoints.\n ...Disabling velocity reference for y channel");
+        ROS_WARN("Could not read file for vel_y waypoints.\n ...Disabling velocity reference for y channel");
         en_wp_vel_y = false;
     }else{ en_wp_vel_y = true; }
 
 if(!(read_file(file_path_acc_x, wp_acc_x))){
-        ROS_WARN("Could not read file for x waypoints.\n ...Disabling acceleration reference for x channel");
+        ROS_WARN("Could not read file for acc_x waypoints.\n ...Disabling acceleration reference for x channel");
         en_wp_acc_x = false;
     }else{ en_wp_acc_x = true; }
     if(!(read_file(file_path_acc_y, wp_acc_y))){
-        ROS_WARN("Could not read file for x waypoints.\n ...Disabling acceleration reference for y channel");
+        ROS_WARN("Could not read file for acc_y waypoints.\n ...Disabling acceleration reference for y channel");
         en_wp_acc_y = false;
     }else{ en_wp_acc_y = true; }
 

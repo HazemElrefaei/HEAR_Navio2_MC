@@ -27,7 +27,7 @@
 
 
 const float TAKE_OFF_HEIGHT = 1.0;
-const float LAND_HEIGHT = -0.2;
+const float LAND_HEIGHT = -0.01;
 
 //#define AUTO_TEST
 #define TESTING
@@ -164,9 +164,9 @@ int main(int argc, char** argv) {
     ((UpdateController*)update_controller_pid_x)->pid_data.dt = (float)1.0/120.0;
     ((UpdateController*)update_controller_pid_x)->pid_data.id = block_id::PID_X;
 
-    ((UpdateController*)update_controller_pid_y)->pid_data.kp = 0.6714;// 0.51639 * 0.8;
+    ((UpdateController*)update_controller_pid_y)->pid_data.kp = 0.6673;// 0.6714;// 0.51639 * 0.8;
     ((UpdateController*)update_controller_pid_y)->pid_data.ki = 0.0;
-    ((UpdateController*)update_controller_pid_y)->pid_data.kd =  -0.2440;// * 0.8;
+    ((UpdateController*)update_controller_pid_y)->pid_data.kd =  -0.2583; //-0.2440;// * 0.8;
     ((UpdateController*)update_controller_pid_y)->pid_data.kdd = 0.0;
     ((UpdateController*)update_controller_pid_y)->pid_data.anti_windup = 0;
     ((UpdateController*)update_controller_pid_y)->pid_data.en_pv_derivation = 1;
@@ -410,8 +410,8 @@ int main(int argc, char** argv) {
     testing_pipeline.addElement((MissionElement*)user_command);
     #endif
 
-    // testing_pipeline.addElement((MissionElement*)start_trajectory);
-    // testing_pipeline.addElement((MissionElement*)user_command);
+    testing_pipeline.addElement((MissionElement*)start_trajectory);
+    testing_pipeline.addElement((MissionElement*)user_command);
 
     // testing_pipeline.addElement((MissionElement*)forward_waypoint);
     // testing_pipeline.addElement((MissionElement*)user_command);
