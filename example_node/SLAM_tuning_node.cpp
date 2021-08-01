@@ -26,9 +26,11 @@
 #include "HEAR_ROS_BRIDGE/ROSUnit_RestNormSettingsClnt.hpp"
 #include "HEAR_ROS_BRIDGE/ROSUnit_ControlOutputSubscriber.hpp"
 
-//#define MRFT_X_SLAM
-#define MRFT_Y_SLAM
-//#define MRFT_Z_SLAM
+//#define MRFT_POS_X
+#define MRFT_POS_Y
+//#define MRFT_POS_Z
+
+#define MRFT_SLAM 
 
 //#define PID_X_SLAM
 //#define PID_Y_SLAM
@@ -70,10 +72,16 @@ int main(int argc, char** argv) {
                                                                       ROSUnit_msg_type::ROSUnit_Float,
                                                                       "land");
 
-#ifdef  MRFT_X_SLAM
+#ifdef  MRFT_POS_X
     ROSUnit* ros_mrft_trigger_x = ROSUnit_Factory_main.CreateROSUnit(ROSUnit_tx_rx_type::Client,
                                                                       ROSUnit_msg_type::ROSUnit_Float,
                                                                       "mrft_switch_x");
+#ifdef MRFT_SLAM
+    ROSUnit* ros_mrft_trigger_slam_x = ROSUnit_Factory_main.CreateROSUnit(ROSUnit_tx_rx_type::Client,
+                                                                      ROSUnit_msg_type::ROSUnit_Bool,
+                                                                      "slam_mrft_switch_x");
+#endif
+
 #endif
 
 #ifdef PID_X_SLAM
@@ -82,10 +90,16 @@ int main(int argc, char** argv) {
                                                                       "slam_pid_switch_x");
 #endif
     
-#ifdef  MRFT_Y_SLAM
+#ifdef  MRFT_POS_Y
     ROSUnit* ros_mrft_trigger_y = ROSUnit_Factory_main.CreateROSUnit(ROSUnit_tx_rx_type::Client,
                                                                       ROSUnit_msg_type::ROSUnit_Float,
                                                                       "mrft_switch_y");
+
+#ifdef MRFT_SLAM
+    ROSUnit* ros_mrft_trigger_slam_y = ROSUnit_Factory_main.CreateROSUnit(ROSUnit_tx_rx_type::Client,
+                                                                      ROSUnit_msg_type::ROSUnit_Bool,
+                                                                      "slam_mrft_switch_y");
+#endif
 #endif
 
 #ifdef PID_Y_SLAM
@@ -94,10 +108,15 @@ int main(int argc, char** argv) {
                                                                       "slam_pid_switch_y");
 #endif
 
-#ifdef  MRFT_Z_SLAM                                                          
+#ifdef  MRFT_POS_Z                                                          
     ROSUnit* ros_mrft_trigger_z = ROSUnit_Factory_main.CreateROSUnit(ROSUnit_tx_rx_type::Client,
                                                                       ROSUnit_msg_type::ROSUnit_Float,
                                                                       "mrft_switch_z");
+#ifdef MRFT_SLAM
+    ROSUnit* ros_mrft_trigger_slam_z = ROSUnit_Factory_main.CreateROSUnit(ROSUnit_tx_rx_type::Client,
+                                                                      ROSUnit_msg_type::ROSUnit_Bool,
+                                                                      "slam_mrft_switch_z");
+#endif
 #endif
 
 #ifdef PID_Z_SLAM
@@ -125,19 +144,19 @@ int main(int argc, char** argv) {
     MissionElement* update_controller_pid_yaw = new UpdateController();
     MissionElement* update_controller_pid_yaw_rate = new UpdateController();
 
-    #ifdef  MRFT_X_SLAM
+    #ifdef  MRFT_POS_X
     MissionElement* update_controller_mrft_x = new UpdateController();
     MissionElement* mrft_switch_on_x=new SwitchTrigger(1);
     MissionElement* mrft_switch_off_x=new SwitchTrigger(0);
     #endif
 
-    #ifdef  MRFT_Y_SLAM
+    #ifdef  MRFT_POS_Y
     MissionElement* update_controller_mrft_y = new UpdateController();
     MissionElement* mrft_switch_on_y=new SwitchTrigger(1);
     MissionElement* mrft_switch_off_y=new SwitchTrigger(0);
     #endif
 
-    #ifdef  MRFT_Z_SLAM
+    #ifdef  MRFT_POS_Z
     MissionElement* update_controller_mrft_z = new UpdateController();
     MissionElement* mrft_switch_on_z=new SwitchTrigger(1);
     MissionElement* mrft_switch_off_z=new SwitchTrigger(0);
@@ -159,6 +178,15 @@ int main(int argc, char** argv) {
     MissionElement* update_controller_pid_salm_z = new UpdateController;
     MissionElement* pid_slam_switch_on_z = new SwitchTrigger(3);
     MissionElement* pid_slam_switch_off_z = new SwitchTrigger(1);
+    #endif
+
+    #ifdef MRFT_SLAM
+    MissionElement* mrft_slam_switch_on_x = new Arm();
+    MissionElement* mrft_slam_switch_on_y = new Arm();
+    MissionElement* mrft_slam_switch_on_z = new Arm();
+    MissionElement* mrft_slam_switch_off_x = new Disarm();
+    MissionElement* mrft_slam_switch_off_y = new Disarm();
+    MissionElement* mrft_slam_switch_off_z = new Disarm();
     #endif
 
     MissionElement* arm_motors = new Arm();
@@ -185,22 +213,35 @@ int main(int argc, char** argv) {
     update_controller_pid_yaw->getPorts()[(int)UpdateController::ports_id::OP_0]->connect(ros_updt_ctr->getPorts()[(int)ROSUnit_UpdateControllerClnt::ports_id::IP_0_PID]);
     update_controller_pid_yaw_rate->getPorts()[(int)UpdateController::ports_id::OP_0]->connect(ros_updt_ctr->getPorts()[(int)ROSUnit_UpdateControllerClnt::ports_id::IP_0_PID]);
 
-    #ifdef  MRFT_X_SLAM
+    #ifdef  MRFT_POS_X
     update_controller_mrft_x->getPorts()[(int)UpdateController::ports_id::OP_0]->connect(ros_updt_ctr->getPorts()[(int)ROSUnit_UpdateControllerClnt::ports_id::IP_1_MRFT]);
     mrft_switch_on_x->getPorts()[(int)SwitchTrigger::ports_id::OP_0]->connect(ros_mrft_trigger_x->getPorts()[(int)ROSUnit_SetFloatClnt::ports_id::IP_0]);
     mrft_switch_off_x->getPorts()[(int)SwitchTrigger::ports_id::OP_0]->connect(ros_mrft_trigger_x->getPorts()[(int)ROSUnit_SetFloatClnt::ports_id::IP_0]);   
+    #ifdef MRFT_SLAM
+    mrft_slam_switch_on_x->getPorts()[(int)Arm::ports_id::OP_0]->connect(ros_mrft_trigger_slam_x->getPorts()[(int)ROSUnit_SetBoolClnt::ports_id::IP_0]);
+    mrft_slam_switch_off_x->getPorts()[(int)Disarm::ports_id::OP_0]->connect(ros_mrft_trigger_slam_x->getPorts()[(int)ROSUnit_SetBoolClnt::ports_id::IP_0]);
     #endif
 
-    #ifdef  MRFT_Y_SLAM
+    #endif
+
+    #ifdef  MRFT_POS_Y
     update_controller_mrft_y->getPorts()[(int)UpdateController::ports_id::OP_0]->connect(ros_updt_ctr->getPorts()[(int)ROSUnit_UpdateControllerClnt::ports_id::IP_1_MRFT]);
     mrft_switch_on_y->getPorts()[(int)SwitchTrigger::ports_id::OP_0]->connect(ros_mrft_trigger_y->getPorts()[(int)ROSUnit_SetFloatClnt::ports_id::IP_0]);
     mrft_switch_off_y->getPorts()[(int)SwitchTrigger::ports_id::OP_0]->connect(ros_mrft_trigger_y->getPorts()[(int)ROSUnit_SetFloatClnt::ports_id::IP_0]);   
+    #ifdef MRFT_SLAM
+    mrft_slam_switch_on_y->getPorts()[(int)Arm::ports_id::OP_0]->connect(ros_mrft_trigger_slam_y->getPorts()[(int)ROSUnit_SetBoolClnt::ports_id::IP_0]);
+    mrft_slam_switch_off_y->getPorts()[(int)Disarm::ports_id::OP_0]->connect(ros_mrft_trigger_slam_y->getPorts()[(int)ROSUnit_SetBoolClnt::ports_id::IP_0]);
+    #endif
     #endif
 
-    #ifdef  MRFT_Z_SLAM
+    #ifdef  MRFT_POS_Z
     update_controller_mrft_z->getPorts()[(int)UpdateController::ports_id::OP_0]->connect(ros_updt_ctr->getPorts()[(int)ROSUnit_UpdateControllerClnt::ports_id::IP_1_MRFT]);
     mrft_switch_on_z->getPorts()[(int)SwitchTrigger::ports_id::OP_0]->connect(ros_mrft_trigger_z->getPorts()[(int)ROSUnit_SetFloatClnt::ports_id::IP_0]);
     mrft_switch_off_z->getPorts()[(int)SwitchTrigger::ports_id::OP_0]->connect(ros_mrft_trigger_z->getPorts()[(int)ROSUnit_SetFloatClnt::ports_id::IP_0]);   
+    #ifdef MRFT_SLAM
+    mrft_slam_switch_on_z->getPorts()[(int)Arm::ports_id::OP_0]->connect(ros_mrft_trigger_slam_z->getPorts()[(int)ROSUnit_SetBoolClnt::ports_id::IP_0]);
+    mrft_slam_switch_off_z->getPorts()[(int)Disarm::ports_id::OP_0]->connect(ros_mrft_trigger_slam_z->getPorts()[(int)ROSUnit_SetBoolClnt::ports_id::IP_0]);
+    #endif
     #endif
 
     #ifdef PID_X_SLAM
@@ -220,6 +261,7 @@ int main(int argc, char** argv) {
     pid_slam_switch_on_z->getPorts()[(int)SwitchTrigger::ports_id::OP_0]->connect(ros_slam_pid_trigger_z->getPorts()[(int)ROSUnit_SetFloatClnt::ports_id::IP_0]);
     pid_slam_switch_off_z->getPorts()[(int)SwitchTrigger::ports_id::OP_0]->connect(ros_slam_pid_trigger_z->getPorts()[(int)ROSUnit_SetFloatClnt::ports_id::IP_0]);
     #endif
+
 
     arm_motors->getPorts()[(int)Arm::ports_id::OP_0]->connect(ros_arm_srv->getPorts()[(int)ROSUnit_SetBoolClnt::ports_id::IP_0]);
     disarm_motors->getPorts()[(int)Disarm::ports_id::OP_0]->connect(ros_arm_srv->getPorts()[(int)ROSUnit_SetBoolClnt::ports_id::IP_0]);
@@ -301,7 +343,7 @@ int main(int argc, char** argv) {
     ((UpdateController*)update_controller_pid_yaw_rate)->pid_data.dt = 1.f/200.f;
     ((UpdateController*)update_controller_pid_yaw_rate)->pid_data.id = block_id::PID_YAW_RATE;
 
-#ifdef MRFT_X_SLAM
+#ifdef MRFT_POS_X
     ((UpdateController*)update_controller_mrft_x)->mrft_data.beta = -0.735;
     ((UpdateController*)update_controller_mrft_x)->mrft_data.relay_amp = 0.07;
     ((UpdateController*)update_controller_mrft_x)->mrft_data.bias = 0.0;
@@ -310,7 +352,7 @@ int main(int argc, char** argv) {
     ((UpdateController*)update_controller_mrft_x)->mrft_data.id = block_id::MRFT_X;
 #endif
 
-#ifdef MRFT_Y_SLAM
+#ifdef MRFT_POS_Y
     ((UpdateController*)update_controller_mrft_y)->mrft_data.beta = -0.735;
     ((UpdateController*)update_controller_mrft_y)->mrft_data.relay_amp = 0.07;
     ((UpdateController*)update_controller_mrft_y)->mrft_data.bias = 0.0;
@@ -319,7 +361,7 @@ int main(int argc, char** argv) {
     ((UpdateController*)update_controller_mrft_y)->mrft_data.id = block_id::MRFT_Y;
 #endif
 
-#ifdef MRFT_Z_SLAM
+#ifdef MRFT_POS_Z
     ((UpdateController*)update_controller_mrft_z)->mrft_data.beta = -0.73;
     ((UpdateController*)update_controller_mrft_z)->mrft_data.relay_amp = 0.15; //0.1;
     ((UpdateController*)update_controller_mrft_z)->mrft_data.bias = 0.0;
@@ -390,15 +432,15 @@ int main(int argc, char** argv) {
     mrft_pipeline.addElement((MissionElement*)update_controller_pid_yaw_rate);
     mrft_pipeline.addElement((MissionElement*)&wait_100ms);
 
-    #ifdef MRFT_X_SLAM
+    #ifdef MRFT_POS_X
     mrft_pipeline.addElement((MissionElement*)update_controller_mrft_x);
     #endif
 
-    #ifdef MRFT_Y_SLAM
+    #ifdef MRFT_POS_Y
     mrft_pipeline.addElement((MissionElement*)update_controller_mrft_y);
     #endif
 
-    #ifdef MRFT_Z_SLAM
+    #ifdef MRFT_POS_Z
     mrft_pipeline.addElement((MissionElement*)update_controller_mrft_z);
     #endif
 
@@ -427,19 +469,30 @@ int main(int argc, char** argv) {
     mrft_pipeline.addElement((MissionElement*)arm_motors);
     mrft_pipeline.addElement((MissionElement*)take_off);
 
-    mrft_pipeline.addElement((MissionElement*)user_command);
 //    mrft_pipeline.addElement((MissionElement*)&wait_5s);
 
-    #ifdef MRFT_X_SLAM
+    #ifdef MRFT_POS_X
+    mrft_pipeline.addElement((MissionElement*)user_command);
     mrft_pipeline.addElement((MissionElement*)mrft_switch_on_x);
+    #ifdef MRFT_SLAM
+    mrft_pipeline.addElement((MissionElement*)mrft_slam_switch_on_y);
+    #endif
     #endif
 
-    #ifdef MRFT_Y_SLAM
+    #ifdef MRFT_POS_Y
+    mrft_pipeline.addElement((MissionElement*)user_command);
     mrft_pipeline.addElement((MissionElement*)mrft_switch_on_y);
+    #ifdef MRFT_SLAM
+    mrft_pipeline.addElement((MissionElement*)mrft_slam_switch_on_y);
+    #endif
     #endif
 
-    #ifdef MRFT_Z_SLAM
+    #ifdef MRFT_POS_Z
+    mrft_pipeline.addElement((MissionElement*)user_command);
     mrft_pipeline.addElement((MissionElement*)mrft_switch_on_z);
+    #ifdef MRFT_SLAM
+    mrft_pipeline.addElement((MissionElement*)mrft_slam_switch_on_z);
+    #endif
     #endif
 
     #ifdef PID_X_SLAM
@@ -459,19 +512,28 @@ int main(int argc, char** argv) {
     mrft_pipeline.addElement((MissionElement*)step_relative_waypoint_x);
     #endif
 
+    #ifdef MRFT_POS_X
     mrft_pipeline.addElement((MissionElement*)user_command);  
-//    mrft_pipeline.addElement((MissionElement*)&wait_5s);
-
-    #ifdef MRFT_X_SLAM
     mrft_pipeline.addElement((MissionElement*)mrft_switch_off_x);
+    #ifdef MRFT_SLAM
+    mrft_pipeline.addElement((MissionElement*)mrft_slam_switch_off_x);
+    #endif
     #endif
 
-    #ifdef MRFT_Y_SLAM
+    #ifdef MRFT_POS_Y
+    mrft_pipeline.addElement((MissionElement*)user_command);  
     mrft_pipeline.addElement((MissionElement*)mrft_switch_off_y);
+    #ifdef MRFT_SLAM
+    mrft_pipeline.addElement((MissionElement*)mrft_slam_switch_off_y);
+    #endif
     #endif
 
-    #ifdef MRFT_Z_SLAM
+    #ifdef MRFT_POS_Z
+    mrft_pipeline.addElement((MissionElement*)user_command);  
     mrft_pipeline.addElement((MissionElement*)mrft_switch_off_z);
+    #ifdef MRFT_SLAM
+    mrft_pipeline.addElement((MissionElement*)mrft_slam_switch_off_z);
+    #endif
     #endif
 
     #ifdef PID_X_SLAM
