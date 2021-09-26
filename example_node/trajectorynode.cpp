@@ -5,6 +5,7 @@
 #include <std_msgs/Float32.h>
 #include <geometry_msgs/Point.h>
 #include <std_srvs/Empty.h>
+#include <tf2/LinearMath/Matrix3x3.h>
 
 #include <fstream>
 #include <sstream>
@@ -24,9 +25,12 @@ const std::string file_path_acc_y = "/home/ahmed/Waypoints/waypoints_acc_y.csv";
 bool start_traj = false;
 bool take_off_flag = false;
 bool land_flag = false;
+bool send_curr_pos = false;
+
+bool tf2horizon = true;
 
 float take_off_height = 1.0;
-float land_height = -0.4;
+float land_height = -0.1;
 geometry_msgs::Point current_pos;
 std_msgs::Float32 current_yaw;
 ros::ServiceClient height_offset_client;
@@ -72,6 +76,12 @@ bool land_Cb(hear_msgs::set_float::Request& req, hear_msgs::set_float::Response&
     return true;
 }
 
+bool send_curr_pos_Cb(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res){
+    send_curr_pos = true;
+    ROS_INFO("sending curr position as reference");
+    return true;
+}
+
 bool srvCallback(hear_msgs::set_bool::Request& req, hear_msgs::set_bool::Response& res){
     start_traj = req.data;
     ROS_INFO("start trajectory called");
@@ -87,6 +97,7 @@ int main(int argc, char **argv){
     ros::ServiceServer takeOff_srv = nh.advertiseService("take_off", &take_off_Cb);
     ros::ServiceServer land_srv = nh.advertiseService("land", &land_Cb);
     ros::ServiceServer height_offset_srv = nh.advertiseService("init_height", &height_Cb);
+    ros::ServiceServer send_curr_pos_srv = nh.advertiseService("send_curr_pos", &send_curr_pos_Cb);
 
     height_offset_client = nh.serviceClient<hear_msgs::set_float>("set_height_offset");
 
@@ -170,11 +181,21 @@ if(!(read_file(file_path_acc_x, wp_acc_x))){
 
 
     std_msgs::Float32 wp_x_msg, wp_y_msg, wp_z_msg, wp_vel_x_msg, wp_vel_y_msg, wp_acc_x_msg, wp_acc_y_msg;
+    tf2::Matrix3x3 rot_horizon(tf2::Quaternion(0,0,0));
     float z_ref = 0.0;
     bool take_off_started = false;
     bool land_started = false;
     bool trajectory_finished = false, trajectory_started = false;
     while(ros::ok()){
+        if(send_curr_pos){
+            send_curr_pos = false;
+            wp_x_msg.data = current_pos.x;
+            wp_y_msg.data = current_pos.y;
+            wp_z_msg.data = current_pos.z;
+            pub_waypoint_x.publish(wp_x_msg);
+            pub_waypoint_y.publish(wp_y_msg);
+            pub_waypoint_z.publish(wp_z_msg);
+        }
         if(land_flag){
             if(!land_started){
                 ROS_INFO("land started");                
@@ -206,6 +227,7 @@ if(!(read_file(file_path_acc_x, wp_acc_x))){
 
                 pub_waypoint_x.publish(wp_x_msg);
                 pub_waypoint_y.publish(wp_y_msg);
+                pub_waypoint_yaw.publish(current_yaw);
             }
             z_ref += (rt.expectedCycleTime()).toSec()*TAKE_OFF_VELOCITY; 
             if(z_ref >= take_off_height){
@@ -224,31 +246,61 @@ if(!(read_file(file_path_acc_x, wp_acc_x))){
                 ROS_INFO("Trajectory Started");
                 trajectory_started = true;
             }
-            if(i < sz_x && en_wp_x){
-                wp_x_msg.data = wp_x[i];
-                pub_waypoint_x.publish(wp_x_msg);
-                if(en_wp_vel_x){
-                    wp_vel_x_msg.data = wp_vel_x[i];
-                    pub_waypoint_vel_x.publish(wp_vel_x_msg);
+            //publish in horizon frame
+            if(tf2horizon){
+                if(sz_x == sz_y){
+                    if(i < sz_x && en_wp_x && en_wp_y){
+                        rot_horizon.setEulerYPR(-current_yaw.data, 0, 0);
+                        auto pos_ref = rot_horizon*tf2::Vector3(wp_x[i], wp_y[i], 0);
+                        wp_x_msg.data = pos_ref.x();
+                        wp_y_msg.data = pos_ref.y();
+                        pub_waypoint_x.publish(wp_x_msg);
+                        pub_waypoint_y.publish(wp_y_msg);
+                        if(en_wp_vel_x && en_wp_vel_y){
+                            auto vel_ref = rot_horizon*tf2::Vector3(wp_vel_x[i], wp_vel_y[i], 0);
+                            wp_vel_x_msg.data = vel_ref.x();
+                            wp_vel_y_msg.data = vel_ref.y();
+                            pub_waypoint_vel_x.publish(wp_vel_x_msg);
+                            pub_waypoint_vel_y.publish(wp_vel_y_msg);
+                        }
+                        if(en_wp_acc_x && en_wp_acc_y){
+                            auto acc_ref = rot_horizon*tf2::Vector3(wp_acc_x[i], wp_acc_y[i], 0);                          
+                            wp_acc_x_msg.data = acc_ref.x();
+                            wp_acc_y_msg.data = acc_ref.y();
+                            pub_waypoint_acc_x.publish(wp_acc_x_msg);
+                            pub_waypoint_acc_y.publish(wp_acc_y_msg);
+                        }
+                        trajectory_finished = false;
+                    }
                 }
-                if(en_wp_acc_x){
-                    wp_acc_x_msg.data = wp_acc_x[i];
-                    pub_waypoint_acc_x.publish(wp_acc_x_msg);
-                }
-                trajectory_finished = false;
             }
-            if(i < sz_y && en_wp_y){
-                wp_y_msg.data = wp_y[i];
-                pub_waypoint_y.publish(wp_y_msg);
-                if(en_wp_vel_y){
-                    wp_vel_y_msg.data = wp_vel_y[i];
-                    pub_waypoint_vel_y.publish(wp_vel_y_msg);
+            else{
+                if(i < sz_x && en_wp_x){
+                    wp_x_msg.data = wp_x[i];
+                    pub_waypoint_x.publish(wp_x_msg);
+                    if(en_wp_vel_x){
+                        wp_vel_x_msg.data = wp_vel_x[i];
+                        pub_waypoint_vel_x.publish(wp_vel_x_msg);
+                    }
+                    if(en_wp_acc_x){
+                        wp_acc_x_msg.data = wp_acc_x[i];
+                        pub_waypoint_acc_x.publish(wp_acc_x_msg);
+                    }
+                    trajectory_finished = false;
                 }
-                if(en_wp_acc_y){
-                    wp_acc_y_msg.data = wp_acc_y[i];
-                    pub_waypoint_acc_y.publish(wp_acc_y_msg);
+                if(i < sz_y && en_wp_y){
+                    wp_y_msg.data = wp_y[i];
+                    pub_waypoint_y.publish(wp_y_msg);
+                    if(en_wp_vel_y){
+                        wp_vel_y_msg.data = wp_vel_y[i];
+                        pub_waypoint_vel_y.publish(wp_vel_y_msg);
+                    }
+                    if(en_wp_acc_y){
+                        wp_acc_y_msg.data = wp_acc_y[i];
+                        pub_waypoint_acc_y.publish(wp_acc_y_msg);
+                    }
+                    trajectory_finished = false;
                 }
-                trajectory_finished = false;
             }
             if(i < sz_z && en_wp_z){
                 wp_z_msg.data = wp_z[i];

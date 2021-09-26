@@ -26,12 +26,14 @@
 #include "HEAR_ROS_BRIDGE/ROSUnit_RestNormSettingsClnt.hpp"
 #include "HEAR_ROS_BRIDGE/ROSUnit_ControlOutputSubscriber.hpp"
 
-#define MRFT_POS_X
-#define MRFT_POS_Y
+//#define MRFT_POS_X
+//#define MRFT_POS_Y
 #define MRFT_POS_Z
 
-#define MRFT_SLAM 
+#define LINEAR_Z
 
+//#define MRFT_SLAM 
+//#define KF
 //#define PID_X_SLAM
 //#define PID_Y_SLAM
 //#define PID_Z_SLAM
@@ -39,6 +41,8 @@
 //#define STEP_X
 
 const float SLAM_FREQ = 30.0;
+const float KF_FREQ = 200.0;
+const float OPTI_FREQ = 90.0;
 const float TAKE_OFF_HEIGHT = 1.2;
 const float LAND_HEIGHT = -0.01;
 
@@ -71,7 +75,15 @@ int main(int argc, char** argv) {
     ROSUnit* ros_land_client = ROSUnit_Factory_main.CreateROSUnit(ROSUnit_tx_rx_type::Client,
                                                                       ROSUnit_msg_type::ROSUnit_Float,
                                                                       "land");
+    ROSUnit* ros_outer_rate_client = ROSUnit_Factory_main.CreateROSUnit(ROSUnit_tx_rx_type::Client,
+                                                                      ROSUnit_msg_type::ROSUnit_Float,
+                                                                      "set_rate_outerloop");
 
+#ifdef KF
+    ROSUnit* ros_kf_trigger = ROSUnit_Factory_main.CreateROSUnit(ROSUnit_tx_rx_type::Client,
+                                                                      ROSUnit_msg_type::ROSUnit_Bool,
+                                                                      "kf_switch");    
+#endif
 #ifdef  MRFT_POS_X
     ROSUnit* ros_mrft_trigger_x = ROSUnit_Factory_main.CreateROSUnit(ROSUnit_tx_rx_type::Client,
                                                                       ROSUnit_msg_type::ROSUnit_Float,
@@ -134,6 +146,10 @@ int main(int argc, char** argv) {
 	ROSUnit* ros_set_height_offset = ROSUnit_Factory_main.CreateROSUnit(ROSUnit_tx_rx_type::Client,
                                                                     ROSUnit_msg_type::ROSUnit_Empty,
                                                                     "init_height"); 
+    ROSUnit* ros_switch_to_linear_z = ROSUnit_Factory_main.CreateROSUnit(ROSUnit_tx_rx_type::Client,
+                                                            ROSUnit_msg_type::ROSUnit_Bool, 
+                                                            "switch_linear_z");
+
 //     //*****************Flight Elements*************
 
     MissionElement* update_controller_pid_x = new UpdateController();
@@ -189,6 +205,13 @@ int main(int argc, char** argv) {
     MissionElement* mrft_slam_switch_off_z = new Disarm();
     #endif
 
+    #ifdef KF
+    MissionElement* kf_switch_on = new Arm();
+    MissionElement* kf_switch_off = new Disarm();
+    MissionElement* change_to_kf_rate = new SwitchTrigger(KF_FREQ);
+    MissionElement* change_to_opti_rate = new SwitchTrigger(OPTI_FREQ);
+    #endif
+
     MissionElement* arm_motors = new Arm();
     MissionElement* disarm_motors = new Disarm();
     MissionElement* enable_pid_z = new Arm();
@@ -203,6 +226,8 @@ int main(int argc, char** argv) {
     MissionElement* user_command = new UserCommand();
 
     MissionElement* set_height_offset = new Arm();
+    MissionElement* sw_on_linear_z = new Arm();
+    MissionElement* sw_off_linear_z = new Disarm();
 
     //******************Connections***************
     update_controller_pid_x->getPorts()[(int)UpdateController::ports_id::OP_0]->connect(ros_updt_ctr->getPorts()[(int)ROSUnit_UpdateControllerClnt::ports_id::IP_0_PID]);
@@ -244,6 +269,11 @@ int main(int argc, char** argv) {
     #endif
     #endif
 
+    #ifdef KF
+    kf_switch_on->getPorts()[(int)Arm::ports_id::OP_0]->connect(ros_kf_trigger->getPorts()[(int)ROSUnit_SetBoolClnt::ports_id::IP_0]);
+    kf_switch_off->getPorts()[(int)Disarm::ports_id::OP_0]->connect(ros_kf_trigger->getPorts()[(int)ROSUnit_SetBoolClnt::ports_id::IP_0]);
+    #endif
+
     #ifdef PID_X_SLAM
     update_controller_pid_salm_x->getPorts()[(int)UpdateController::ports_id::OP_0]->connect(ros_updt_ctr->getPorts()[(int)ROSUnit_UpdateControllerClnt::ports_id::IP_0_PID]);
     pid_slam_switch_on_x->getPorts()[(int)SwitchTrigger::ports_id::OP_0]->connect(ros_slam_pid_trigger_x->getPorts()[(int)ROSUnit_SetFloatClnt::ports_id::IP_0]);
@@ -272,35 +302,42 @@ int main(int argc, char** argv) {
     set_vo_offset->getPorts()[(int)Arm::ports_id::OP_0]->connect(set_vo_offset_srv->getPorts()[(int)ROSUnit_SetBoolClnt::ports_id::IP_0]);
 
     ros_flight_command->getPorts()[(int)ROSUnit_EmptySrv::ports_id::OP_0]->connect(user_command->getPorts()[(int)UserCommand::ports_id::IP_0]);
-
       
     set_height_offset->getPorts()[(int)Arm::ports_id::OP_0]->connect(ros_set_height_offset->getPorts()[(int)ROSUnit_EmptyClnt::ports_id::IP_0]);
     take_off->getPorts()[(int)SwitchTrigger::ports_id::OP_0]->connect(ros_take_off_client->getPorts()[(int)ROSUnit_SetFloatClnt::ports_id::IP_0]);
     land->getPorts()[(int)SwitchTrigger::ports_id::OP_0]->connect(ros_land_client->getPorts()[(int)ROSUnit_SetFloatClnt::ports_id::IP_0]);
 
+    sw_on_linear_z->getPorts()[(int)Arm::ports_id::OP_0]->connect(ros_switch_to_linear_z->getPorts()[(int)ROSUnit_SetBoolClnt::ports_id::IP_0]);
+    sw_off_linear_z->getPorts()[(int)Disarm::ports_id::OP_0]->connect(ros_switch_to_linear_z->getPorts()[(int)ROSUnit_SetBoolClnt::ports_id::IP_0]);
+
+    #ifdef KF
+    change_to_kf_rate->getPorts()[(int)SwitchTrigger::ports_id::OP_0]->connect(ros_outer_rate_client->getPorts()[(int)ROSUnit_SetFloatClnt::ports_id::IP_0]);
+    change_to_opti_rate->getPorts()[(int)SwitchTrigger::ports_id::OP_0]->connect(ros_outer_rate_client->getPorts()[(int)ROSUnit_SetFloatClnt::ports_id::IP_0]);
+    #endif
+
     //*************Setting Flight Elements*************
 
-    ((UpdateController*)update_controller_pid_x)->pid_data.kp = 0.8786*0.577; //0.51639 * 0.8;
+    ((UpdateController*)update_controller_pid_x)->pid_data.kp = 0.622073204; //0.8786*0.5; //0.51639 * 0.8;
     ((UpdateController*)update_controller_pid_x)->pid_data.ki = 0.0;
-    ((UpdateController*)update_controller_pid_x)->pid_data.kd = -0.3441*0.57; //0.21192 * 0.8;
+    ((UpdateController*)update_controller_pid_x)->pid_data.kd = -0.226038285; //0.3441*0.5; //0.21192 * 0.8;
     ((UpdateController*)update_controller_pid_x)->pid_data.kdd = 0.0;
     ((UpdateController*)update_controller_pid_x)->pid_data.anti_windup = 0;
     ((UpdateController*)update_controller_pid_x)->pid_data.en_pv_derivation = 1;
     ((UpdateController*)update_controller_pid_x)->pid_data.dt = (float)1.0/120.0;
     ((UpdateController*)update_controller_pid_x)->pid_data.id = block_id::PID_X;
 
-    ((UpdateController*)update_controller_pid_y)->pid_data.kp = 0.6714*0.75;// 0.51639 * 0.8;
+    ((UpdateController*)update_controller_pid_y)->pid_data.kp = 0.592289033;// 0.6673*0.75;// 0.6714;// 0.51639 * 0.8;
     ((UpdateController*)update_controller_pid_y)->pid_data.ki = 0.0;
-    ((UpdateController*)update_controller_pid_y)->pid_data.kd =  -0.2440*0.75;// * 0.8;
+    ((UpdateController*)update_controller_pid_y)->pid_data.kd =  -0.215215824;// 0.2583*0.75; //-0.2440;// * 0.8;
     ((UpdateController*)update_controller_pid_y)->pid_data.kdd = 0.0;
     ((UpdateController*)update_controller_pid_y)->pid_data.anti_windup = 0;
     ((UpdateController*)update_controller_pid_y)->pid_data.en_pv_derivation = 1;
     ((UpdateController*)update_controller_pid_y)->pid_data.dt = (float)1.0/120.0;
     ((UpdateController*)update_controller_pid_y)->pid_data.id = block_id::PID_Y;
 
-    ((UpdateController*)update_controller_pid_z)->pid_data.kp = 1.2414*0.75; 
+    ((UpdateController*)update_controller_pid_z)->pid_data.kp = 0.641645244; // 1.2414*0.75; 
     ((UpdateController*)update_controller_pid_z)->pid_data.ki = 0.0; 
-    ((UpdateController*)update_controller_pid_z)->pid_data.kd = -0.3316*0.75; 
+    ((UpdateController*)update_controller_pid_z)->pid_data.kd = -0.258805043; // 0.3316*0.75; 
     ((UpdateController*)update_controller_pid_z)->pid_data.kdd = 0.0;
     ((UpdateController*)update_controller_pid_z)->pid_data.anti_windup = 0;
     ((UpdateController*)update_controller_pid_z)->pid_data.en_pv_derivation = 1;
@@ -474,12 +511,24 @@ int main(int argc, char** argv) {
 
     #ifdef MRFT_POS_X
     mrft_pipeline.addElement((MissionElement*)user_command);
+    #ifdef KF
+    mrft_pipeline.addElement((MissionElement*)kf_switch_on);
+    mrft_pipeline.addElement((MissionElement*)change_to_kf_rate);
+    #endif
+
     mrft_pipeline.addElement((MissionElement*)mrft_switch_on_x);
+
     #ifdef MRFT_SLAM
     mrft_pipeline.addElement((MissionElement*)mrft_slam_switch_on_x);
     #endif
+    
     mrft_pipeline.addElement((MissionElement*)user_command);  
     mrft_pipeline.addElement((MissionElement*)mrft_switch_off_x);
+
+    #ifdef KF
+    mrft_pipeline.addElement((MissionElement*)kf_switch_off);
+    mrft_pipeline.addElement((MissionElement*)change_to_opti_rate);
+    #endif
     #ifdef MRFT_SLAM
     mrft_pipeline.addElement((MissionElement*)mrft_slam_switch_off_x);
     #endif
@@ -488,11 +537,19 @@ int main(int argc, char** argv) {
     #ifdef MRFT_POS_Y
     mrft_pipeline.addElement((MissionElement*)user_command);
     mrft_pipeline.addElement((MissionElement*)mrft_switch_on_y);
+    #ifdef KF
+    mrft_pipeline.addElement((MissionElement*)kf_switch_on);
+    mrft_pipeline.addElement((MissionElement*)change_to_kf_rate);
+    #endif
     #ifdef MRFT_SLAM
     mrft_pipeline.addElement((MissionElement*)mrft_slam_switch_on_y);
     #endif
     mrft_pipeline.addElement((MissionElement*)user_command);  
     mrft_pipeline.addElement((MissionElement*)mrft_switch_off_y);
+    #ifdef KF
+    mrft_pipeline.addElement((MissionElement*)kf_switch_off);
+    mrft_pipeline.addElement((MissionElement*)change_to_opti_rate);
+    #endif
     #ifdef MRFT_SLAM
     mrft_pipeline.addElement((MissionElement*)mrft_slam_switch_off_y);
     #endif
@@ -500,12 +557,26 @@ int main(int argc, char** argv) {
 
     #ifdef MRFT_POS_Z
     mrft_pipeline.addElement((MissionElement*)user_command);
+    #ifdef LINEAR_Z
+    mrft_pipeline.addElement((MissionElement*)sw_on_linear_z);
+    #endif
     mrft_pipeline.addElement((MissionElement*)mrft_switch_on_z);
+    #ifdef KF
+    mrft_pipeline.addElement((MissionElement*)kf_switch_on);
+    mrft_pipeline.addElement((MissionElement*)change_to_kf_rate);
+    #endif
     #ifdef MRFT_SLAM
     mrft_pipeline.addElement((MissionElement*)mrft_slam_switch_on_z);
     #endif
-    mrft_pipeline.addElement((MissionElement*)user_command);  
+    mrft_pipeline.addElement((MissionElement*)user_command);
+    #ifdef LINEAR_Z
+    mrft_pipeline.addElement((MissionElement*)sw_off_linear_z);
+    #endif
     mrft_pipeline.addElement((MissionElement*)mrft_switch_off_z);
+    #ifdef KF
+    mrft_pipeline.addElement((MissionElement*)kf_switch_off);
+    mrft_pipeline.addElement((MissionElement*)change_to_opti_rate);
+    #endif
     #ifdef MRFT_SLAM
     mrft_pipeline.addElement((MissionElement*)mrft_slam_switch_off_z);
     #endif
