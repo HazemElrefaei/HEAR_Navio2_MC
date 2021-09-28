@@ -111,9 +111,6 @@ int main(int argc, char** argv) {
 	ROSUnit* ros_set_height_offset = ROSUnit_Factory_main.CreateROSUnit(ROSUnit_tx_rx_type::Client,
                                                                     ROSUnit_msg_type::ROSUnit_Empty,
                                                                     "init_height");
-	ROSUnit* ros_set_height_offset = ROSUnit_Factory_main.CreateROSUnit(ROSUnit_tx_rx_type::Client,
-                                                                    ROSUnit_msg_type::ROSUnit_Empty,
-                                                                    "init_height");
 	ROSUnit* ros_send_opti_curr_pos = ROSUnit_Factory_main.CreateROSUnit(ROSUnit_tx_rx_type::Client,
                                                                     ROSUnit_msg_type::ROSUnit_Empty,
                                                                     "send_curr_pos_opti");
