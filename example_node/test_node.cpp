@@ -29,9 +29,9 @@
 const float TAKE_OFF_HEIGHT = 1.5;
 const float LAND_HEIGHT = -0.01;
 
-#define STORE_KF_BIAS
+//#define STORE_KF_BIAS
 #define TRAJ_TEST
-//#define SLAM_TEST
+#define SLAM_TEST
 //#define AUTO_TEST
 #define TESTING
 //#define BIG_HEXA
@@ -62,9 +62,6 @@ int main(int argc, char** argv) {
 
 
     ROSUnit* ros_updt_ctr = new ROSUnit_UpdateControllerClnt(nh);
-    // ROSUnit* ros_info_sub = new ROSUnit_InfoSubscriber(nh);
-    // ROSUnit* ros_restnorm_settings = new ROSUnit_RestNormSettingsClnt(nh);
-    
     ROSUnit_Factory ROSUnit_Factory_main{nh};
     ROSUnit* ros_arm_srv = ROSUnit_Factory_main.CreateROSUnit(ROSUnit_tx_rx_type::Client,
                                                             ROSUnit_msg_type::ROSUnit_Bool, 
@@ -104,14 +101,18 @@ int main(int argc, char** argv) {
 	ROSUnit* ros_set_height_offset = ROSUnit_Factory_main.CreateROSUnit(ROSUnit_tx_rx_type::Client,
                                                                     ROSUnit_msg_type::ROSUnit_Empty,
                                                                     "init_height");
-    ROSUnit* ros_send_curr_pos = ROSUnit_Factory_main.CreateROSUnit(ROSUnit_tx_rx_type::Client,
+    ROSUnit* ros_send_opti_curr_pos = ROSUnit_Factory_main.CreateROSUnit(ROSUnit_tx_rx_type::Client,
                                                                     ROSUnit_msg_type::ROSUnit_Empty,
-                                                                    "send_curr_pos");     
+                                                                    "send_curr_pos_opti");
+	ROSUnit* ros_send_slam_curr_pos = ROSUnit_Factory_main.CreateROSUnit(ROSUnit_tx_rx_type::Client,
+                                                                    ROSUnit_msg_type::ROSUnit_Empty,
+                                                                    "send_curr_pos_slam");
     #ifdef  STORE_KF_BIAS                                                            
     ROSUnit* ros_kf_freeze_bias_clnt = ROSUnit_Factory_main.CreateROSUnit(ROSUnit_tx_rx_type::Client,
                                                             ROSUnit_msg_type::ROSUnit_Bool, 
                                                             "kf_freeze_bias");
     #endif
+    
 //     //*****************Flight Elements*************
 
     MissionElement* update_controller_pid_x = new UpdateController();
@@ -149,7 +150,9 @@ int main(int argc, char** argv) {
     MissionElement* user_command = new UserCommand();
 
     MissionElement* set_height_offset = new Arm(); 
-    MissionElement* send_current_pos_ref = new Arm(); 
+    MissionElement* send_current_pos_ref_opti = new Arm(); 
+    MissionElement* send_current_pos_ref_slam = new Arm(); 
+
     #ifdef STORE_KF_BIAS
     MissionElement* freeze_kf_bias = new Arm(); 
     #endif    
@@ -186,7 +189,8 @@ int main(int argc, char** argv) {
     ros_flight_command->getPorts()[(int)ROSUnit_EmptySrv::ports_id::OP_0]->connect(user_command->getPorts()[(int)UserCommand::ports_id::IP_0]);
     
     set_height_offset->getPorts()[(int)Arm::ports_id::OP_0]->connect(ros_set_height_offset->getPorts()[(int)ROSUnit_EmptyClnt::ports_id::IP_0]);
-    send_current_pos_ref->getPorts()[(int)Arm::ports_id::OP_0]->connect(ros_send_curr_pos->getPorts()[(int)ROSUnit_EmptyClnt::ports_id::IP_0]);
+    send_current_pos_ref_opti->getPorts()[(int)Arm::ports_id::OP_0]->connect(ros_send_opti_curr_pos->getPorts()[(int)ROSUnit_EmptyClnt::ports_id::IP_0]);
+    send_current_pos_ref_slam->getPorts()[(int)Arm::ports_id::OP_0]->connect(ros_send_slam_curr_pos->getPorts()[(int)ROSUnit_EmptyClnt::ports_id::IP_0]);
     take_off->getPorts()[(int)SwitchTrigger::ports_id::OP_0]->connect(ros_take_off_client->getPorts()[(int)ROSUnit_SetFloatClnt::ports_id::IP_0]);
     land->getPorts()[(int)SwitchTrigger::ports_id::OP_0]->connect(ros_land_client->getPorts()[(int)ROSUnit_SetFloatClnt::ports_id::IP_0]);
     #ifdef STORE_KF_BIAS
@@ -198,7 +202,7 @@ int main(int argc, char** argv) {
     #ifdef SMALL_HEXA
     ((UpdateController*)update_controller_pid_x)->pid_data.kp = 0.583430204; //0.8786*0.5; //0.51639 * 0.8;
     ((UpdateController*)update_controller_pid_x)->pid_data.ki = 0.0;
-    ((UpdateController*)update_controller_pid_x)->pid_data.kd = -0.211996855; //0.3441*0.5; //0.21192 * 0.8;
+    ((UpdateController*)update_controller_pid_x)->pid_data.kd = 0.211996855; //0.3441*0.5; //0.21192 * 0.8;
     ((UpdateController*)update_controller_pid_x)->pid_data.kdd = 0.0;
     ((UpdateController*)update_controller_pid_x)->pid_data.anti_windup = 0;
     ((UpdateController*)update_controller_pid_x)->pid_data.en_pv_derivation = 1;
@@ -207,7 +211,7 @@ int main(int argc, char** argv) {
 
     ((UpdateController*)update_controller_pid_y)->pid_data.kp = 0.592289033;// 0.6673*0.75;// 0.6714;// 0.51639 * 0.8;
     ((UpdateController*)update_controller_pid_y)->pid_data.ki = 0.0;
-    ((UpdateController*)update_controller_pid_y)->pid_data.kd =  -0.215215824;// 0.2583*0.75; //-0.2440;// * 0.8;
+    ((UpdateController*)update_controller_pid_y)->pid_data.kd = 0.215215824;// 0.2583*0.75; //-0.2440;// * 0.8;
     ((UpdateController*)update_controller_pid_y)->pid_data.kdd = 0.0;
     ((UpdateController*)update_controller_pid_y)->pid_data.anti_windup = 0;
     ((UpdateController*)update_controller_pid_y)->pid_data.en_pv_derivation = 1;
@@ -216,16 +220,16 @@ int main(int argc, char** argv) {
 
     ((UpdateController*)update_controller_pid_z)->pid_data.kp = 0.613969957; // 1.2414*0.75; 
     ((UpdateController*)update_controller_pid_z)->pid_data.ki = 0.0; 
-    ((UpdateController*)update_controller_pid_z)->pid_data.kd = -0.214920534; // 0.3316*0.75; 
+    ((UpdateController*)update_controller_pid_z)->pid_data.kd = 0.214920534; // 0.3316*0.75; 
     ((UpdateController*)update_controller_pid_z)->pid_data.kdd = 0.0;
     ((UpdateController*)update_controller_pid_z)->pid_data.anti_windup = 0;
     ((UpdateController*)update_controller_pid_z)->pid_data.en_pv_derivation = 1;
     ((UpdateController*)update_controller_pid_z)->pid_data.dt = (float)1.0/120.0;
     ((UpdateController*)update_controller_pid_z)->pid_data.id = block_id::PID_Z;
 
-    ((UpdateController*)update_controller_pid_roll)->pid_data.kp =  0.4991; //0.225*0.8; //0.172195; //0.3302; //0.286708; //0.225 * 0.8; 
+    ((UpdateController*)update_controller_pid_roll)->pid_data.kp = 0.4991; //0.225*0.8; //0.172195; //0.3302; //0.286708; //0.225 * 0.8; 
     ((UpdateController*)update_controller_pid_roll)->pid_data.ki = 0.0;
-    ((UpdateController*)update_controller_pid_roll)->pid_data.kd = -0.0750; //0.04*0.8; //0.042464; //0.0931; //0.056559; //0.04 * 0.8;
+    ((UpdateController*)update_controller_pid_roll)->pid_data.kd = 0.0750; //0.04*0.8; //0.042464; //0.0931; //0.056559; //0.04 * 0.8;
     ((UpdateController*)update_controller_pid_roll)->pid_data.kdd = 0.0;
     ((UpdateController*)update_controller_pid_roll)->pid_data.anti_windup = 0;
     ((UpdateController*)update_controller_pid_roll)->pid_data.en_pv_derivation = 1;
@@ -234,7 +238,7 @@ int main(int argc, char** argv) {
 
     ((UpdateController*)update_controller_pid_pitch)->pid_data.kp = 0.5271; //0.225*0.8;// 0.3360; //0.2811;//0.275252; //0.225 * 0.8; 
     ((UpdateController*)update_controller_pid_pitch)->pid_data.ki = 0.0;
-    ((UpdateController*)update_controller_pid_pitch)->pid_data.kd = -0.0792; //0.04*0.8;//0.0684; //0.053100; //0.0868;// 0.051266; //0.04 * 0.8; 
+    ((UpdateController*)update_controller_pid_pitch)->pid_data.kd = 0.0792; //0.04*0.8;//0.0684; //0.053100; //0.0868;// 0.051266; //0.04 * 0.8; 
     ((UpdateController*)update_controller_pid_pitch)->pid_data.kdd = 0.0;
     ((UpdateController*)update_controller_pid_pitch)->pid_data.anti_windup = 0;
     ((UpdateController*)update_controller_pid_pitch)->pid_data.en_pv_derivation = 1;
@@ -262,7 +266,7 @@ int main(int argc, char** argv) {
     #ifdef SLAM_TEST
     ((UpdateController*)update_pid_slam_x)->pid_data.kp = 0.311; //0.51639 * 0.8;
     ((UpdateController*)update_pid_slam_x)->pid_data.ki = 0.0;
-    ((UpdateController*)update_pid_slam_x)->pid_data.kd = -0.151; //0.21192 * 0.8;
+    ((UpdateController*)update_pid_slam_x)->pid_data.kd = 0.151; //0.21192 * 0.8;
     ((UpdateController*)update_pid_slam_x)->pid_data.kdd = 0.0;
     ((UpdateController*)update_pid_slam_x)->pid_data.anti_windup = 0;
     ((UpdateController*)update_pid_slam_x)->pid_data.en_pv_derivation = 1;
@@ -271,7 +275,7 @@ int main(int argc, char** argv) {
 
     ((UpdateController*)update_pid_slam_y)->pid_data.kp = 0.332;// 0.6714;// 0.51639 * 0.8;
     ((UpdateController*)update_pid_slam_y)->pid_data.ki = 0.0;
-    ((UpdateController*)update_pid_slam_y)->pid_data.kd =  -0.161; //-0.2440;// * 0.8;
+    ((UpdateController*)update_pid_slam_y)->pid_data.kd =  0.161; //-0.2440;// * 0.8;
     ((UpdateController*)update_pid_slam_y)->pid_data.kdd = 0.0;
     ((UpdateController*)update_pid_slam_y)->pid_data.anti_windup = 0;
     ((UpdateController*)update_pid_slam_y)->pid_data.en_pv_derivation = 1;
@@ -280,7 +284,7 @@ int main(int argc, char** argv) {
 
     ((UpdateController*)update_pid_slam_z)->pid_data.kp = 0.454*0.9; 
     ((UpdateController*)update_pid_slam_z)->pid_data.ki = 0.0; 
-    ((UpdateController*)update_pid_slam_z)->pid_data.kd = -0.197*0.9; 
+    ((UpdateController*)update_pid_slam_z)->pid_data.kd = 0.197*0.9; 
     ((UpdateController*)update_pid_slam_z)->pid_data.kdd = 0.0;
     ((UpdateController*)update_pid_slam_z)->pid_data.anti_windup = 0;
     ((UpdateController*)update_pid_slam_z)->pid_data.en_pv_derivation = 1;
@@ -290,69 +294,7 @@ int main(int argc, char** argv) {
     #endif
 
     #ifdef BIG_HEXA
-    // ((UpdateController*)update_controller_pid_x)->pid_data.kp = kpx;
-    // ((UpdateController*)update_controller_pid_x)->pid_data.ki = 0.0;
-    // ((UpdateController*)update_controller_pid_x)->pid_data.kd = kdx;
-    // ((UpdateController*)update_controller_pid_x)->pid_data.kdd = 0.0;
-    // ((UpdateController*)update_controller_pid_x)->pid_data.anti_windup = 0;
-    // ((UpdateController*)update_controller_pid_x)->pid_data.en_pv_derivation = 1;
-    // ((UpdateController*)update_controller_pid_x)->pid_data.dt = (float)1.0/120.0;
-    // ((UpdateController*)update_controller_pid_x)->pid_data.id = block_id::PID_X;
-
-    // ((UpdateController*)update_controller_pid_y)->pid_data.kp = kpy;
-    // ((UpdateController*)update_controller_pid_y)->pid_data.ki = 0.0;
-    // ((UpdateController*)update_controller_pid_y)->pid_data.kd =  kdy;
-    // ((UpdateController*)update_controller_pid_y)->pid_data.kdd = 0.0;
-    // ((UpdateController*)update_controller_pid_y)->pid_data.anti_windup = 0;
-    // ((UpdateController*)update_controller_pid_y)->pid_data.en_pv_derivation = 1;
-    // ((UpdateController*)update_controller_pid_y)->pid_data.dt = (float)1.0/120.0;
-    // ((UpdateController*)update_controller_pid_y)->pid_data.id = block_id::PID_Y;
-
-    // ((UpdateController*)update_controller_pid_z)->pid_data.kp = kpz; 
-    // ((UpdateController*)update_controller_pid_z)->pid_data.ki = kiz; 
-    // ((UpdateController*)update_controller_pid_z)->pid_data.kd = kdz; 
-    // ((UpdateController*)update_controller_pid_z)->pid_data.kdd = 0.0;
-    // ((UpdateController*)update_controller_pid_z)->pid_data.anti_windup = 0;
-    // ((UpdateController*)update_controller_pid_z)->pid_data.en_pv_derivation = 1;
-    // ((UpdateController*)update_controller_pid_z)->pid_data.dt = (float)1.0/120.0;
-    // ((UpdateController*)update_controller_pid_z)->pid_data.id = block_id::PID_Z;
-
-    // ((UpdateController*)update_controller_pid_roll)->pid_data.kp = kpr*0.8;
-    // ((UpdateController*)update_controller_pid_roll)->pid_data.ki = 0.0;
-    // ((UpdateController*)update_controller_pid_roll)->pid_data.kd = kdr*0.8;
-    // ((UpdateController*)update_controller_pid_roll)->pid_data.kdd = 0.0;
-    // ((UpdateController*)update_controller_pid_roll)->pid_data.anti_windup = 0;
-    // ((UpdateController*)update_controller_pid_roll)->pid_data.en_pv_derivation = 1;
-    // ((UpdateController*)update_controller_pid_roll)->pid_data.dt = 1.f/200.f;
-    // ((UpdateController*)update_controller_pid_roll)->pid_data.id = block_id::PID_ROLL;
-
-    // ((UpdateController*)update_controller_pid_pitch)->pid_data.kp = kpp*0.8;
-    // ((UpdateController*)update_controller_pid_pitch)->pid_data.ki = 0.0;
-    // ((UpdateController*)update_controller_pid_pitch)->pid_data.kd =  kdp*0.8;
-    // ((UpdateController*)update_controller_pid_pitch)->pid_data.kdd = 0.0;
-    // ((UpdateController*)update_controller_pid_pitch)->pid_data.anti_windup = 0;
-    // ((UpdateController*)update_controller_pid_pitch)->pid_data.en_pv_derivation = 1;
-    // ((UpdateController*)update_controller_pid_pitch)->pid_data.dt = 1.f/200.f;
-    // ((UpdateController*)update_controller_pid_pitch)->pid_data.id = block_id::PID_PITCH;
-
-    // ((UpdateController*)update_controller_pid_yaw)->pid_data.kp = kpyaw;
-    // ((UpdateController*)update_controller_pid_yaw)->pid_data.ki = 0.0;
-    // ((UpdateController*)update_controller_pid_yaw)->pid_data.kd = 0.0;
-    // ((UpdateController*)update_controller_pid_yaw)->pid_data.kdd = 0.0;
-    // ((UpdateController*)update_controller_pid_yaw)->pid_data.anti_windup = 0;
-    // ((UpdateController*)update_controller_pid_yaw)->pid_data.en_pv_derivation = 1;
-    // ((UpdateController*)update_controller_pid_yaw)->pid_data.dt = 1.f/120.f;
-    // ((UpdateController*)update_controller_pid_yaw)->pid_data.id = block_id::PID_YAW;
-
-    // ((UpdateController*)update_controller_pid_yaw_rate)->pid_data.kp = kpyr;
-    // ((UpdateController*)update_controller_pid_yaw_rate)->pid_data.ki = 0.0;
-    // ((UpdateController*)update_controller_pid_yaw_rate)->pid_data.kd = 0.0;
-    // ((UpdateController*)update_controller_pid_yaw_rate)->pid_data.kdd = 0.0;
-    // ((UpdateController*)update_controller_pid_yaw_rate)->pid_data.anti_windup = 0;
-    // ((UpdateController*)update_controller_pid_yaw_rate)->pid_data.en_pv_derivation = 1;
-    // ((UpdateController*)update_controller_pid_yaw_rate)->pid_data.dt = 1.f/200.f;
-    // ((UpdateController*)update_controller_pid_yaw_rate)->pid_data.id = block_id::PID_YAW_RATE;
-        ((UpdateController*)update_controller_pid_x)->pid_data.kp = 0.6534;
+    ((UpdateController*)update_controller_pid_x)->pid_data.kp = 0.6534;
     ((UpdateController*)update_controller_pid_x)->pid_data.ki = 0.0;
     ((UpdateController*)update_controller_pid_x)->pid_data.kd = 0.3831;
     ((UpdateController*)update_controller_pid_x)->pid_data.kdd = 0.0;
@@ -415,8 +357,6 @@ int main(int argc, char** argv) {
     ((UpdateController*)update_controller_pid_yaw_rate)->pid_data.dt = 1.f/200.f;
     ((UpdateController*)update_controller_pid_yaw_rate)->pid_data.id = block_id::PID_YAW_RATE;
     #endif
-
-    // ((ResetController*)reset_z)->target_block = block_id::PID_Z;
 
     Wait wait_1s;
     wait_1s.wait_time_ms=1000;
@@ -481,6 +421,7 @@ int main(int argc, char** argv) {
     testing_pipeline.addElement((MissionElement*)update_pid_slam_x);
     testing_pipeline.addElement((MissionElement*)update_pid_slam_y);
     testing_pipeline.addElement((MissionElement*)update_pid_slam_z);
+    testing_pipeline.addElement((MissionElement*)send_current_pos_ref_slam);
     testing_pipeline.addElement((MissionElement*)slam_switch_on);
     testing_pipeline.addElement((MissionElement*)user_command);
     #endif
@@ -493,6 +434,7 @@ int main(int argc, char** argv) {
 
     #ifdef SLAM_TEST
     testing_pipeline.addElement((MissionElement*)slam_switch_off);
+    testing_pipeline.addElement((MissionElement*)send_current_pos_ref_opti);
     testing_pipeline.addElement((MissionElement*)update_controller_pid_x);
     testing_pipeline.addElement((MissionElement*)update_controller_pid_y);
     testing_pipeline.addElement((MissionElement*)update_controller_pid_z);
