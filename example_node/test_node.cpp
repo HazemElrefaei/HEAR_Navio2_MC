@@ -31,7 +31,7 @@ const float LAND_HEIGHT = -0.01;
 
 #define STORE_KF_BIAS
 #define TRAJ_TEST
-//#define SLAM_TEST
+#define SLAM_TEST
 //#define AUTO_TEST
 #define TESTING
 //#define BIG_HEXA
@@ -482,6 +482,8 @@ int main(int argc, char** argv) {
     testing_pipeline.addElement((MissionElement*)update_pid_slam_y);
     testing_pipeline.addElement((MissionElement*)update_pid_slam_z);
     testing_pipeline.addElement((MissionElement*)slam_switch_on);
+    testing_pipeline.addElement((MissionElement*)&wait_50ms);
+    testing_pipeline.addElement((MissionElement*)send_current_pos_ref);
     testing_pipeline.addElement((MissionElement*)user_command);
     #endif
 
@@ -493,6 +495,8 @@ int main(int argc, char** argv) {
 
     #ifdef SLAM_TEST
     testing_pipeline.addElement((MissionElement*)slam_switch_off);
+    testing_pipeline.addElement((MissionElement*)&wait_50ms);
+    testing_pipeline.addElement((MissionElement*)send_current_pos_ref);
     testing_pipeline.addElement((MissionElement*)update_controller_pid_x);
     testing_pipeline.addElement((MissionElement*)update_controller_pid_y);
     testing_pipeline.addElement((MissionElement*)update_controller_pid_z);
