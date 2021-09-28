@@ -26,10 +26,11 @@
 #include "HEAR_ROS_BRIDGE/ROSUnit_ControlOutputSubscriber.hpp"
 
 
-const float TAKE_OFF_HEIGHT = 1.0;
+const float TAKE_OFF_HEIGHT = 1.5;
 const float LAND_HEIGHT = -0.01;
 
-//#define TRAJ_TEST
+#define STORE_KF_BIAS
+#define TRAJ_TEST
 //#define SLAM_TEST
 //#define AUTO_TEST
 #define TESTING
@@ -105,7 +106,12 @@ int main(int argc, char** argv) {
                                                                     "init_height");
     ROSUnit* ros_send_curr_pos = ROSUnit_Factory_main.CreateROSUnit(ROSUnit_tx_rx_type::Client,
                                                                     ROSUnit_msg_type::ROSUnit_Empty,
-                                                                    "send_curr_pos");                                                                  
+                                                                    "send_curr_pos");     
+    #ifdef  STORE_KF_BIAS                                                            
+    ROSUnit* ros_kf_freeze_bias_clnt = ROSUnit_Factory_main.CreateROSUnit(ROSUnit_tx_rx_type::Client,
+                                                            ROSUnit_msg_type::ROSUnit_Bool, 
+                                                            "kf_freeze_bias");
+    #endif
 //     //*****************Flight Elements*************
 
     MissionElement* update_controller_pid_x = new UpdateController();
@@ -144,7 +150,9 @@ int main(int argc, char** argv) {
 
     MissionElement* set_height_offset = new Arm(); 
     MissionElement* send_current_pos_ref = new Arm(); 
-    
+    #ifdef STORE_KF_BIAS
+    MissionElement* freeze_kf_bias = new Arm(); 
+    #endif    
     //******************Connections***************
     update_controller_pid_x->getPorts()[(int)UpdateController::ports_id::OP_0]->connect((ros_updt_ctr)->getPorts()[(int)ROSUnit_UpdateControllerClnt::ports_id::IP_0_PID]);
     update_controller_pid_y->getPorts()[(int)UpdateController::ports_id::OP_0]->connect((ros_updt_ctr)->getPorts()[(int)ROSUnit_UpdateControllerClnt::ports_id::IP_0_PID]);
@@ -181,14 +189,16 @@ int main(int argc, char** argv) {
     send_current_pos_ref->getPorts()[(int)Arm::ports_id::OP_0]->connect(ros_send_curr_pos->getPorts()[(int)ROSUnit_EmptyClnt::ports_id::IP_0]);
     take_off->getPorts()[(int)SwitchTrigger::ports_id::OP_0]->connect(ros_take_off_client->getPorts()[(int)ROSUnit_SetFloatClnt::ports_id::IP_0]);
     land->getPorts()[(int)SwitchTrigger::ports_id::OP_0]->connect(ros_land_client->getPorts()[(int)ROSUnit_SetFloatClnt::ports_id::IP_0]);
-
+    #ifdef STORE_KF_BIAS
+    freeze_kf_bias->getPorts()[(int)Arm::ports_id::OP_0]->connect(ros_kf_freeze_bias_clnt->getPorts()[(int)ROSUnit_EmptyClnt::ports_id::IP_0]);
+    #endif
     //absolute_zero_Z_relative_waypoint->connect(ros_set_path_clnt);
 
     //*************Setting Flight Elements*************
     #ifdef SMALL_HEXA
-    ((UpdateController*)update_controller_pid_x)->pid_data.kp = 0.622073204; //0.8786*0.5; //0.51639 * 0.8;
+    ((UpdateController*)update_controller_pid_x)->pid_data.kp = 0.583430204; //0.8786*0.5; //0.51639 * 0.8;
     ((UpdateController*)update_controller_pid_x)->pid_data.ki = 0.0;
-    ((UpdateController*)update_controller_pid_x)->pid_data.kd = -0.226038285; //0.3441*0.5; //0.21192 * 0.8;
+    ((UpdateController*)update_controller_pid_x)->pid_data.kd = -0.211996855; //0.3441*0.5; //0.21192 * 0.8;
     ((UpdateController*)update_controller_pid_x)->pid_data.kdd = 0.0;
     ((UpdateController*)update_controller_pid_x)->pid_data.anti_windup = 0;
     ((UpdateController*)update_controller_pid_x)->pid_data.en_pv_derivation = 1;
@@ -204,9 +214,9 @@ int main(int argc, char** argv) {
     ((UpdateController*)update_controller_pid_y)->pid_data.dt = (float)1.0/120.0;
     ((UpdateController*)update_controller_pid_y)->pid_data.id = block_id::PID_Y;
 
-    ((UpdateController*)update_controller_pid_z)->pid_data.kp = 0.641645244; // 1.2414*0.75; 
+    ((UpdateController*)update_controller_pid_z)->pid_data.kp = 0.613969957; // 1.2414*0.75; 
     ((UpdateController*)update_controller_pid_z)->pid_data.ki = 0.0; 
-    ((UpdateController*)update_controller_pid_z)->pid_data.kd = -0.258805043; // 0.3316*0.75; 
+    ((UpdateController*)update_controller_pid_z)->pid_data.kd = -0.214920534; // 0.3316*0.75; 
     ((UpdateController*)update_controller_pid_z)->pid_data.kdd = 0.0;
     ((UpdateController*)update_controller_pid_z)->pid_data.anti_windup = 0;
     ((UpdateController*)update_controller_pid_z)->pid_data.en_pv_derivation = 1;
@@ -455,6 +465,11 @@ int main(int argc, char** argv) {
     // testing_pipeline.addElement((MissionElement*)reset_z); //Reset I-term to zero
     testing_pipeline.addElement((MissionElement*)arm_motors);
     testing_pipeline.addElement((MissionElement*)take_off);
+
+    #ifdef STORE_KF_BIAS
+    testing_pipeline.addElement((MissionElement*)user_command);
+    testing_pipeline.addElement((MissionElement*)freeze_kf_bias);
+    #endif
 
     #ifdef AUTO_TEST
     testing_pipeline.addElement((MissionElement*)&wait_5s);
