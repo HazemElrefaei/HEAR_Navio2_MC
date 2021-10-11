@@ -31,7 +31,7 @@ bool tf2horizon = true;
 
 float take_off_height = 1.0;
 float land_height = -0.1;
-geometry_msgs::Point current_pos;
+geometry_msgs::Point current_pos, traj_start_pos;
 std_msgs::Float32 current_yaw;
 ros::ServiceClient height_offset_client;
 
@@ -245,6 +245,7 @@ if(!(read_file(file_path_acc_x, wp_acc_x))){
             if(!trajectory_started){
                 ROS_INFO("Trajectory Started");
                 trajectory_started = true;
+                traj_start_pos = current_pos;
             }
             //publish in horizon frame
             if(tf2horizon){
@@ -252,8 +253,8 @@ if(!(read_file(file_path_acc_x, wp_acc_x))){
                     if(i < sz_x && en_wp_x && en_wp_y){
                         rot_horizon.setEulerYPR(-current_yaw.data, 0, 0);
                         auto pos_ref = rot_horizon*tf2::Vector3(wp_x[i], wp_y[i], 0);
-                        wp_x_msg.data = pos_ref.x();
-                        wp_y_msg.data = pos_ref.y();
+                        wp_x_msg.data = pos_ref.x() + traj_start_pos.x;
+                        wp_y_msg.data = pos_ref.y() + traj_start_pos.y;
                         pub_waypoint_x.publish(wp_x_msg);
                         pub_waypoint_y.publish(wp_y_msg);
                         if(en_wp_vel_x && en_wp_vel_y){
