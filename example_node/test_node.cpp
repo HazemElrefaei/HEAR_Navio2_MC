@@ -26,8 +26,9 @@
 #include "HEAR_ROS_BRIDGE/ROSUnit_ControlOutputSubscriber.hpp"
 
 
-const float TAKE_OFF_HEIGHT = 1.3;
+const float TAKE_OFF_HEIGHT = 1.35;
 const float LAND_HEIGHT = -0.01;
+const float K_act = 24;
 
 //#define STORE_KF_BIAS
 #define TRAJ_TEST
@@ -106,7 +107,12 @@ int main(int argc, char** argv) {
                                                                     "init_height");
     ROSUnit* ros_send_curr_pos = ROSUnit_Factory_main.CreateROSUnit(ROSUnit_tx_rx_type::Client,
                                                                     ROSUnit_msg_type::ROSUnit_Empty,
-                                                                    "send_curr_pos");     
+                                                                    "send_curr_pos");
+
+    ROSUnit* ros_adjust_act_gain = ROSUnit_Factory_main.CreateROSUnit(ROSUnit_tx_rx_type::Client,
+                                                            ROSUnit_msg_type::ROSUnit_Bool, 
+                                                            "use_adjusted_act_gain");
+                                                                         
     #ifdef  STORE_KF_BIAS                                                            
     ROSUnit* ros_kf_freeze_bias_clnt = ROSUnit_Factory_main.CreateROSUnit(ROSUnit_tx_rx_type::Client,
                                                             ROSUnit_msg_type::ROSUnit_Bool, 
@@ -136,6 +142,9 @@ int main(int argc, char** argv) {
     MissionElement* disable_in_filt = new Disarm();
     MissionElement* disable_out_filt = new Disarm();
     MissionElement* start_trajectory = new Arm();
+    MissionElement* adjust_act_gain = new Arm();
+    MissionElement* original_act_gain = new Disarm();
+
     MissionElement* set_vo_offset = new Arm();
 
     #ifdef SLAM_TEST
@@ -192,31 +201,35 @@ int main(int argc, char** argv) {
     #ifdef STORE_KF_BIAS
     freeze_kf_bias->getPorts()[(int)Arm::ports_id::OP_0]->connect(ros_kf_freeze_bias_clnt->getPorts()[(int)ROSUnit_EmptyClnt::ports_id::IP_0]);
     #endif
+
+    adjust_act_gain->getPorts()[(int)Arm::ports_id::OP_0]->connect(ros_adjust_act_gain->getPorts()[(int)ROSUnit_SetBoolClnt::ports_id::IP_0]);
+    original_act_gain->getPorts()[(int)Disarm::ports_id::OP_0]->connect(ros_adjust_act_gain->getPorts()[(int)ROSUnit_SetBoolClnt::ports_id::IP_0]);
+
     //absolute_zero_Z_relative_waypoint->connect(ros_set_path_clnt);
 
     //*************Setting Flight Elements*************
     #ifdef SMALL_HEXA
-    ((UpdateController*)update_controller_pid_x)->pid_data.kp = 0.583430204*0.8; //0.8786*0.5; //0.51639 * 0.8;
+    ((UpdateController*)update_controller_pid_x)->pid_data.kp = 9.28; //0.583430204*0.8*K_act; //0.8786*0.5; //0.51639 * 0.8;
     ((UpdateController*)update_controller_pid_x)->pid_data.ki = 0.0;
-    ((UpdateController*)update_controller_pid_x)->pid_data.kd = -0.211996855*0.8; //0.3441*0.5; //0.21192 * 0.8;
+    ((UpdateController*)update_controller_pid_x)->pid_data.kd = -3.37; //0.211996855*0.8*K_act; //0.3441*0.5; //0.21192 * 0.8;
     ((UpdateController*)update_controller_pid_x)->pid_data.kdd = 0.0;
     ((UpdateController*)update_controller_pid_x)->pid_data.anti_windup = 0;
     ((UpdateController*)update_controller_pid_x)->pid_data.en_pv_derivation = 1;
     ((UpdateController*)update_controller_pid_x)->pid_data.dt = (float)1.0/120.0;
     ((UpdateController*)update_controller_pid_x)->pid_data.id = block_id::PID_X;
 
-    ((UpdateController*)update_controller_pid_y)->pid_data.kp = 0.592289033*0.8;// 0.6673*0.75;// 0.6714;// 0.51639 * 0.8;
+    ((UpdateController*)update_controller_pid_y)->pid_data.kp = 9.07; //0.592289033*0.8*K_act;// 0.6673*0.75;// 0.6714;// 0.51639 * 0.8;
     ((UpdateController*)update_controller_pid_y)->pid_data.ki = 0.0;
-    ((UpdateController*)update_controller_pid_y)->pid_data.kd =  -0.215215824*0.8;// 0.2583*0.75; //-0.2440;// * 0.8;
+    ((UpdateController*)update_controller_pid_y)->pid_data.kd =  -3.51; //0.215215824*0.8*K_act;// 0.2583*0.75; //-0.2440;// * 0.8;
     ((UpdateController*)update_controller_pid_y)->pid_data.kdd = 0.0;
     ((UpdateController*)update_controller_pid_y)->pid_data.anti_windup = 0;
     ((UpdateController*)update_controller_pid_y)->pid_data.en_pv_derivation = 1;
     ((UpdateController*)update_controller_pid_y)->pid_data.dt = (float)1.0/120.0;
     ((UpdateController*)update_controller_pid_y)->pid_data.id = block_id::PID_Y;
 
-    ((UpdateController*)update_controller_pid_z)->pid_data.kp = 0.613969957*0.8; // 1.2414*0.75; 
+    ((UpdateController*)update_controller_pid_z)->pid_data.kp = 21.34; //0.613969957*0.8*K_act; // 1.2414*0.75; 
     ((UpdateController*)update_controller_pid_z)->pid_data.ki = 0.0; 
-    ((UpdateController*)update_controller_pid_z)->pid_data.kd = -0.214920534*0.8; // 0.3316*0.75; 
+    ((UpdateController*)update_controller_pid_z)->pid_data.kd = -6,76; //0.214920534*0.8*K_act; // 0.3316*0.75; 
     ((UpdateController*)update_controller_pid_z)->pid_data.kdd = 0.0;
     ((UpdateController*)update_controller_pid_z)->pid_data.anti_windup = 0;
     ((UpdateController*)update_controller_pid_z)->pid_data.en_pv_derivation = 1;
@@ -260,27 +273,27 @@ int main(int argc, char** argv) {
     ((UpdateController*)update_controller_pid_yaw_rate)->pid_data.id = block_id::PID_YAW_RATE;
     
     #ifdef SLAM_TEST
-    ((UpdateController*)update_pid_slam_x)->pid_data.kp = 0.255; //0.51639 * 0.8;
+    ((UpdateController*)update_pid_slam_x)->pid_data.kp = 3.35; //0.255; //0.51639 * 0.8;
     ((UpdateController*)update_pid_slam_x)->pid_data.ki = 0.0;
-    ((UpdateController*)update_pid_slam_x)->pid_data.kd = -0.164; //0.21192 * 0.8;
+    ((UpdateController*)update_pid_slam_x)->pid_data.kd = -1.632; //0.164; //0.21192 * 0.8;
     ((UpdateController*)update_pid_slam_x)->pid_data.kdd = 0.0;
     ((UpdateController*)update_pid_slam_x)->pid_data.anti_windup = 0;
     ((UpdateController*)update_pid_slam_x)->pid_data.en_pv_derivation = 1;
     ((UpdateController*)update_pid_slam_x)->pid_data.dt = (float)1.0/120.0;
     ((UpdateController*)update_pid_slam_x)->pid_data.id = block_id::PID_X;
 
-    ((UpdateController*)update_pid_slam_y)->pid_data.kp = 0.34;// 0.6714;// 0.51639 * 0.8;
+    ((UpdateController*)update_pid_slam_y)->pid_data.kp = 4.28; //0.34;// 0.6714;// 0.51639 * 0.8;
     ((UpdateController*)update_pid_slam_y)->pid_data.ki = 0.0;
-    ((UpdateController*)update_pid_slam_y)->pid_data.kd = -0.21; //-0.2440;// * 0.8;
+    ((UpdateController*)update_pid_slam_y)->pid_data.kd = -2.08; //0.21; //-0.2440;// * 0.8;
     ((UpdateController*)update_pid_slam_y)->pid_data.kdd = 0.0;
     ((UpdateController*)update_pid_slam_y)->pid_data.anti_windup = 0;
     ((UpdateController*)update_pid_slam_y)->pid_data.en_pv_derivation = 1;
     ((UpdateController*)update_pid_slam_y)->pid_data.dt = (float)1.0/120.0;
     ((UpdateController*)update_pid_slam_y)->pid_data.id = block_id::PID_Y;
 
-    ((UpdateController*)update_pid_slam_z)->pid_data.kp = 0.5808; 
-    ((UpdateController*)update_pid_slam_z)->pid_data.ki = 0.4249;
-    ((UpdateController*)update_pid_slam_z)->pid_data.kd = -0.2; 
+    ((UpdateController*)update_pid_slam_z)->pid_data.kp = 13.81; //0.5808; 
+    ((UpdateController*)update_pid_slam_z)->pid_data.ki = 0.0; //0.4249;
+    ((UpdateController*)update_pid_slam_z)->pid_data.kd = -6.0; //0.2; 
     ((UpdateController*)update_pid_slam_z)->pid_data.kdd = 0.0;
     ((UpdateController*)update_pid_slam_z)->pid_data.anti_windup = 0;
     ((UpdateController*)update_pid_slam_z)->pid_data.en_pv_derivation = 1;
@@ -487,8 +500,19 @@ int main(int argc, char** argv) {
     testing_pipeline.addElement((MissionElement*)user_command);
     #endif
 
+    // testing_pipeline.addElement((MissionElement*)user_command);
+    // testing_pipeline.addElement((MissionElement*)rec_hover_thrust);
+    // testing_pipeline.addElement((MissionElement*)&wait_100ms);
+    // testing_pipeline.addElement((MissionElement*)adjust_act_gain);
+    // testing_pipeline.addElement((MissionElement*)&wait_100ms);
+    // testing_pipeline.addElement((MissionElement*)original_act_gain);
+
     #ifdef TRAJ_TEST
     testing_pipeline.addElement((MissionElement*)rec_hover_thrust);
+    testing_pipeline.addElement((MissionElement*)&wait_100ms);
+    testing_pipeline.addElement((MissionElement*)adjust_act_gain);
+    testing_pipeline.addElement((MissionElement*)&wait_1s);
+    // testing_pipeline.addElement((MissionElement*)original_act_gain);
     testing_pipeline.addElement((MissionElement*)start_trajectory);
     testing_pipeline.addElement((MissionElement*)user_command);
     #endif
