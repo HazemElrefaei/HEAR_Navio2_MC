@@ -26,11 +26,11 @@
 #include "HEAR_ROS_BRIDGE/ROSUnit_ControlOutputSubscriber.hpp"
 
 
-const float TAKE_OFF_HEIGHT = 1.5;
+const float TAKE_OFF_HEIGHT = 1.0;
 const float LAND_HEIGHT = -0.01;
 
 //#define STORE_KF_BIAS
-#define TRAJ_TEST
+//#define TRAJ_TEST
 #define SLAM_TEST
 //#define AUTO_TEST
 #define TESTING
@@ -200,27 +200,27 @@ int main(int argc, char** argv) {
 
     //*************Setting Flight Elements*************
     #ifdef SMALL_HEXA
-    ((UpdateController*)update_controller_pid_x)->pid_data.kp = 0.583430204; //0.8786*0.5; //0.51639 * 0.8;
+    ((UpdateController*)update_controller_pid_x)->pid_data.kp = 9.28; //0.583430204; //0.8786*0.5; //0.51639 * 0.8;
     ((UpdateController*)update_controller_pid_x)->pid_data.ki = 0.0;
-    ((UpdateController*)update_controller_pid_x)->pid_data.kd = 0.211996855; //0.3441*0.5; //0.21192 * 0.8;
+    ((UpdateController*)update_controller_pid_x)->pid_data.kd = 3.37; //0.211996855; //0.3441*0.5; //0.21192 * 0.8;
     ((UpdateController*)update_controller_pid_x)->pid_data.kdd = 0.0;
     ((UpdateController*)update_controller_pid_x)->pid_data.anti_windup = 0;
     ((UpdateController*)update_controller_pid_x)->pid_data.en_pv_derivation = 1;
     ((UpdateController*)update_controller_pid_x)->pid_data.dt = (float)1.0/120.0;
     ((UpdateController*)update_controller_pid_x)->pid_data.id = block_id::PID_X;
 
-    ((UpdateController*)update_controller_pid_y)->pid_data.kp = 0.592289033;// 0.6673*0.75;// 0.6714;// 0.51639 * 0.8;
+    ((UpdateController*)update_controller_pid_y)->pid_data.kp = 9.5; //0.592289033;// 0.6673*0.75;// 0.6714;// 0.51639 * 0.8;
     ((UpdateController*)update_controller_pid_y)->pid_data.ki = 0.0;
-    ((UpdateController*)update_controller_pid_y)->pid_data.kd = 0.215215824;// 0.2583*0.75; //-0.2440;// * 0.8;
+    ((UpdateController*)update_controller_pid_y)->pid_data.kd = 3.45; //0.215215824;// 0.2583*0.75; //-0.2440;// * 0.8;
     ((UpdateController*)update_controller_pid_y)->pid_data.kdd = 0.0;
     ((UpdateController*)update_controller_pid_y)->pid_data.anti_windup = 0;
     ((UpdateController*)update_controller_pid_y)->pid_data.en_pv_derivation = 1;
     ((UpdateController*)update_controller_pid_y)->pid_data.dt = (float)1.0/120.0;
     ((UpdateController*)update_controller_pid_y)->pid_data.id = block_id::PID_Y;
 
-    ((UpdateController*)update_controller_pid_z)->pid_data.kp = 0.613969957; // 1.2414*0.75; 
+    ((UpdateController*)update_controller_pid_z)->pid_data.kp = 21.5; //0.613969957; // 1.2414*0.75; 
     ((UpdateController*)update_controller_pid_z)->pid_data.ki = 0.0; 
-    ((UpdateController*)update_controller_pid_z)->pid_data.kd = 0.214920534; // 0.3316*0.75; 
+    ((UpdateController*)update_controller_pid_z)->pid_data.kd = 6.8; //0.214920534; // 0.3316*0.75; 
     ((UpdateController*)update_controller_pid_z)->pid_data.kdd = 0.0;
     ((UpdateController*)update_controller_pid_z)->pid_data.anti_windup = 0;
     ((UpdateController*)update_controller_pid_z)->pid_data.en_pv_derivation = 1;
@@ -264,27 +264,27 @@ int main(int argc, char** argv) {
     ((UpdateController*)update_controller_pid_yaw_rate)->pid_data.id = block_id::PID_YAW_RATE;
     
     #ifdef SLAM_TEST
-    ((UpdateController*)update_pid_slam_x)->pid_data.kp = 0.311; //0.51639 * 0.8;
+    ((UpdateController*)update_pid_slam_x)->pid_data.kp = 3.35; //0.311; //0.51639 * 0.8;
     ((UpdateController*)update_pid_slam_x)->pid_data.ki = 0.0;
-    ((UpdateController*)update_pid_slam_x)->pid_data.kd = 0.151; //0.21192 * 0.8;
+    ((UpdateController*)update_pid_slam_x)->pid_data.kd = 1.63; //0.151; //0.21192 * 0.8;
     ((UpdateController*)update_pid_slam_x)->pid_data.kdd = 0.0;
     ((UpdateController*)update_pid_slam_x)->pid_data.anti_windup = 0;
     ((UpdateController*)update_pid_slam_x)->pid_data.en_pv_derivation = 1;
     ((UpdateController*)update_pid_slam_x)->pid_data.dt = (float)1.0/120.0;
     ((UpdateController*)update_pid_slam_x)->pid_data.id = block_id::PID_X;
 
-    ((UpdateController*)update_pid_slam_y)->pid_data.kp = 0.332;// 0.6714;// 0.51639 * 0.8;
+    ((UpdateController*)update_pid_slam_y)->pid_data.kp = 4.28; //0.332;// 0.6714;// 0.51639 * 0.8;
     ((UpdateController*)update_pid_slam_y)->pid_data.ki = 0.0;
-    ((UpdateController*)update_pid_slam_y)->pid_data.kd =  0.161; //-0.2440;// * 0.8;
+    ((UpdateController*)update_pid_slam_y)->pid_data.kd =  2.086; //0.161; //-0.2440;// * 0.8;
     ((UpdateController*)update_pid_slam_y)->pid_data.kdd = 0.0;
     ((UpdateController*)update_pid_slam_y)->pid_data.anti_windup = 0;
     ((UpdateController*)update_pid_slam_y)->pid_data.en_pv_derivation = 1;
     ((UpdateController*)update_pid_slam_y)->pid_data.dt = (float)1.0/120.0;
     ((UpdateController*)update_pid_slam_y)->pid_data.id = block_id::PID_Y;
 
-    ((UpdateController*)update_pid_slam_z)->pid_data.kp = 0.454*0.9; 
+    ((UpdateController*)update_pid_slam_z)->pid_data.kp = 13.8; //0.454*0.9; 
     ((UpdateController*)update_pid_slam_z)->pid_data.ki = 0.0; 
-    ((UpdateController*)update_pid_slam_z)->pid_data.kd = 0.197*0.9; 
+    ((UpdateController*)update_pid_slam_z)->pid_data.kd = 6.0; //0.197*0.9; 
     ((UpdateController*)update_pid_slam_z)->pid_data.kdd = 0.0;
     ((UpdateController*)update_pid_slam_z)->pid_data.anti_windup = 0;
     ((UpdateController*)update_pid_slam_z)->pid_data.en_pv_derivation = 1;

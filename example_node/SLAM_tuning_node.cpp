@@ -27,9 +27,9 @@
 #include "HEAR_ROS_BRIDGE/ROSUnit_ControlOutputSubscriber.hpp"
 
 #define MRFT_POS_X
-#define MRFT_POS_Y
-#define MRFT_POS_Z
-
+//#define MRFT_POS_Y
+//#define MRFT_POS_Z
+////////////////////////////////////// increase relay amplitude in Y
 #define MRFT_SLAM 
 //#define KF
 
@@ -244,32 +244,33 @@ int main(int argc, char** argv) {
 
     //*************Setting Flight Elements*************
 
-    ((UpdateController*)update_controller_pid_x)->pid_data.kp = 0.583430204; //0.8786*0.5; //0.51639 * 0.8;
+    ((UpdateController*)update_controller_pid_x)->pid_data.kp = 9.28; //0.583430204; //0.8786*0.5; //0.51639 * 0.8;
     ((UpdateController*)update_controller_pid_x)->pid_data.ki = 0.0;
-    ((UpdateController*)update_controller_pid_x)->pid_data.kd = 0.211996855; //0.3441*0.5; //0.21192 * 0.8;
+    ((UpdateController*)update_controller_pid_x)->pid_data.kd = 3.37; //0.211996855; //0.3441*0.5; //0.21192 * 0.8;
     ((UpdateController*)update_controller_pid_x)->pid_data.kdd = 0.0;
     ((UpdateController*)update_controller_pid_x)->pid_data.anti_windup = 0;
     ((UpdateController*)update_controller_pid_x)->pid_data.en_pv_derivation = 1;
     ((UpdateController*)update_controller_pid_x)->pid_data.dt = (float)1.0/120.0;
     ((UpdateController*)update_controller_pid_x)->pid_data.id = block_id::PID_X;
 
-    ((UpdateController*)update_controller_pid_y)->pid_data.kp = 0.592289033;// 0.6673*0.75;// 0.6714;// 0.51639 * 0.8;
+    ((UpdateController*)update_controller_pid_y)->pid_data.kp = 9.5; //0.592289033;// 0.6673*0.75;// 0.6714;// 0.51639 * 0.8;
     ((UpdateController*)update_controller_pid_y)->pid_data.ki = 0.0;
-    ((UpdateController*)update_controller_pid_y)->pid_data.kd = 0.215215824;// 0.2583*0.75; //-0.2440;// * 0.8;
+    ((UpdateController*)update_controller_pid_y)->pid_data.kd = 3.45; //0.215215824;// 0.2583*0.75; //-0.2440;// * 0.8;
     ((UpdateController*)update_controller_pid_y)->pid_data.kdd = 0.0;
     ((UpdateController*)update_controller_pid_y)->pid_data.anti_windup = 0;
     ((UpdateController*)update_controller_pid_y)->pid_data.en_pv_derivation = 1;
     ((UpdateController*)update_controller_pid_y)->pid_data.dt = (float)1.0/120.0;
     ((UpdateController*)update_controller_pid_y)->pid_data.id = block_id::PID_Y;
 
-    ((UpdateController*)update_controller_pid_z)->pid_data.kp = 0.613969957; // 1.2414*0.75; 
+    ((UpdateController*)update_controller_pid_z)->pid_data.kp = 21.5; //0.613969957; // 1.2414*0.75; 
     ((UpdateController*)update_controller_pid_z)->pid_data.ki = 0.0; 
-    ((UpdateController*)update_controller_pid_z)->pid_data.kd = 0.214920534; // 0.3316*0.75; 
+    ((UpdateController*)update_controller_pid_z)->pid_data.kd = 6.8; //0.214920534; // 0.3316*0.75; 
     ((UpdateController*)update_controller_pid_z)->pid_data.kdd = 0.0;
     ((UpdateController*)update_controller_pid_z)->pid_data.anti_windup = 0;
     ((UpdateController*)update_controller_pid_z)->pid_data.en_pv_derivation = 1;
     ((UpdateController*)update_controller_pid_z)->pid_data.dt = (float)1.0/120.0;
     ((UpdateController*)update_controller_pid_z)->pid_data.id = block_id::PID_Z;
+
 
     ((UpdateController*)update_controller_pid_roll)->pid_data.kp = 0.4991; //0.225*0.8; //0.172195; //0.3302; //0.286708; //0.225 * 0.8; 
     ((UpdateController*)update_controller_pid_roll)->pid_data.ki = 0.0;
@@ -309,52 +310,52 @@ int main(int argc, char** argv) {
 
 #ifdef MRFT_POS_X
     ((UpdateController*)update_controller_mrft_x)->mrft_data.beta = -0.735;
-    ((UpdateController*)update_controller_mrft_x)->mrft_data.relay_amp = 0.07;
+    ((UpdateController*)update_controller_mrft_x)->mrft_data.relay_amp = 1.5;
     ((UpdateController*)update_controller_mrft_x)->mrft_data.bias = 0.0;
-    ((UpdateController*)update_controller_mrft_x)->mrft_data.num_of_peak_conf_samples = 12;
+    ((UpdateController*)update_controller_mrft_x)->mrft_data.num_of_peak_conf_samples = 20;
     ((UpdateController*)update_controller_mrft_x)->mrft_data.no_switch_delay_in_ms = 100;
     ((UpdateController*)update_controller_mrft_x)->mrft_data.id = block_id::MRFT_X;
 #endif
 
 #ifdef MRFT_POS_Y
     ((UpdateController*)update_controller_mrft_y)->mrft_data.beta = -0.735;
-    ((UpdateController*)update_controller_mrft_y)->mrft_data.relay_amp = 0.07;
+    ((UpdateController*)update_controller_mrft_y)->mrft_data.relay_amp = 1.5;
     ((UpdateController*)update_controller_mrft_y)->mrft_data.bias = 0.0;
     ((UpdateController*)update_controller_mrft_y)->mrft_data.no_switch_delay_in_ms = 100;
-    ((UpdateController*)update_controller_mrft_y)->mrft_data.num_of_peak_conf_samples = 12;
+    ((UpdateController*)update_controller_mrft_y)->mrft_data.num_of_peak_conf_samples = 20;
     ((UpdateController*)update_controller_mrft_y)->mrft_data.id = block_id::MRFT_Y;
 #endif
 
 #ifdef MRFT_POS_Z
     ((UpdateController*)update_controller_mrft_z)->mrft_data.beta = -0.73;
-    ((UpdateController*)update_controller_mrft_z)->mrft_data.relay_amp = 0.15; //0.1;
+    ((UpdateController*)update_controller_mrft_z)->mrft_data.relay_amp = 2.5; //0.1;
     ((UpdateController*)update_controller_mrft_z)->mrft_data.bias = 0.0;
-    ((UpdateController*)update_controller_mrft_z)->mrft_data.num_of_peak_conf_samples = 12;
+    ((UpdateController*)update_controller_mrft_z)->mrft_data.num_of_peak_conf_samples = 20;
     ((UpdateController*)update_controller_mrft_z)->mrft_data.id = block_id::MRFT_Z;
 #endif
 
 #ifdef MRFT_SLAM
-    ((UpdateController*)update_controller_pid_slam_x)->pid_data.kp = 0.15;
+    ((UpdateController*)update_controller_pid_slam_x)->pid_data.kp = 3.35;
     ((UpdateController*)update_controller_pid_slam_x)->pid_data.ki = 0.0;
-    ((UpdateController*)update_controller_pid_slam_x)->pid_data.kd = 0.075;
+    ((UpdateController*)update_controller_pid_slam_x)->pid_data.kd = 1.63;
     ((UpdateController*)update_controller_pid_slam_x)->pid_data.kdd = 0.0;
     ((UpdateController*)update_controller_pid_slam_x)->pid_data.anti_windup = 0;
     ((UpdateController*)update_controller_pid_slam_x)->pid_data.en_pv_derivation = 1;
     ((UpdateController*)update_controller_pid_slam_x)->pid_data.dt = (float)1.0/SLAM_FREQ;
     ((UpdateController*)update_controller_pid_slam_x)->pid_data.id = block_id::PID_X;
 
-    ((UpdateController*)update_controller_pid_slam_y)->pid_data.kp = 0.15;
+    ((UpdateController*)update_controller_pid_slam_y)->pid_data.kp = 4.28;
     ((UpdateController*)update_controller_pid_slam_y)->pid_data.ki = 0.0;
-    ((UpdateController*)update_controller_pid_slam_y)->pid_data.kd = 0.075;
+    ((UpdateController*)update_controller_pid_slam_y)->pid_data.kd = 2.08;
     ((UpdateController*)update_controller_pid_slam_y)->pid_data.kdd = 0.0;
     ((UpdateController*)update_controller_pid_slam_y)->pid_data.anti_windup = 0;
     ((UpdateController*)update_controller_pid_slam_y)->pid_data.en_pv_derivation = 1;
     ((UpdateController*)update_controller_pid_slam_y)->pid_data.dt = (float)1.0/SLAM_FREQ;
     ((UpdateController*)update_controller_pid_slam_y)->pid_data.id = block_id::PID_Y;
 
-    ((UpdateController*)update_controller_pid_slam_z)->pid_data.kp = 0.2; 
+    ((UpdateController*)update_controller_pid_slam_z)->pid_data.kp = 13.8; 
     ((UpdateController*)update_controller_pid_slam_z)->pid_data.ki = 0.0; 
-    ((UpdateController*)update_controller_pid_slam_z)->pid_data.kd = 0.09; 
+    ((UpdateController*)update_controller_pid_slam_z)->pid_data.kd = 6.0; 
     ((UpdateController*)update_controller_pid_slam_z)->pid_data.kdd = 0.0;
     ((UpdateController*)update_controller_pid_slam_z)->pid_data.anti_windup = 0;
     ((UpdateController*)update_controller_pid_slam_z)->pid_data.en_pv_derivation = 1;
@@ -441,7 +442,9 @@ int main(int argc, char** argv) {
         mrft_pipeline.addElement((MissionElement*)update_controller_pid_slam_z);
         mrft_pipeline.addElement((MissionElement*)slam_switch_on);
         mrft_pipeline.addElement((MissionElement*)send_curr_slam_ref);
-        mrft_pipeline.addElement((MissionElement*)&wait_100ms);
+        // mrft_pipeline.addElement((MissionElement*)&wait_100ms);
+        mrft_pipeline.addElement((MissionElement*)user_command);
+
         #endif
 
         mrft_pipeline.addElement((MissionElement*)mrft_switch_on_x);
@@ -476,7 +479,9 @@ int main(int argc, char** argv) {
         mrft_pipeline.addElement((MissionElement*)update_controller_pid_slam_z);
         mrft_pipeline.addElement((MissionElement*)slam_switch_on);
         mrft_pipeline.addElement((MissionElement*)send_curr_slam_ref);
-        mrft_pipeline.addElement((MissionElement*)&wait_100ms);
+        // mrft_pipeline.addElement((MissionElement*)&wait_100ms);
+        mrft_pipeline.addElement((MissionElement*)user_command);
+
         #endif
 
         mrft_pipeline.addElement((MissionElement*)mrft_switch_on_y);
@@ -509,7 +514,8 @@ int main(int argc, char** argv) {
         mrft_pipeline.addElement((MissionElement*)update_controller_pid_slam_z);
         mrft_pipeline.addElement((MissionElement*)slam_switch_on);
         mrft_pipeline.addElement((MissionElement*)send_curr_slam_ref);
-        mrft_pipeline.addElement((MissionElement*)&wait_100ms);
+        // mrft_pipeline.addElement((MissionElement*)&wait_100ms);
+        mrft_pipeline.addElement((MissionElement*)user_command);
         #endif
 
         mrft_pipeline.addElement((MissionElement*)mrft_switch_on_z);
