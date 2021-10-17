@@ -117,7 +117,11 @@ int main(int argc, char** argv) {
                                                             ROSUnit_msg_type::ROSUnit_Bool, 
                                                             "use_adjusted_act_gain");
 
-    
+    ROSUnit* ros_correct_biases = ROSUnit_Factory_main.CreateROSUnit(ROSUnit_tx_rx_type::Client,
+                                                            ROSUnit_msg_type::ROSUnit_Bool, 
+                                                            "correct_biases");
+
+
 //     //*****************Flight Elements*************
 
     MissionElement* update_controller_pid_x = new UpdateController();
@@ -160,6 +164,8 @@ int main(int argc, char** argv) {
 
     MissionElement* adjust_act_gain = new Arm();
     MissionElement* original_act_gain = new Disarm();
+
+    MissionElement* correct_biases = new Arm();
 
     #ifdef STORE_KF_BIAS
     MissionElement* freeze_kf_bias = new Arm(); 
@@ -208,6 +214,8 @@ int main(int argc, char** argv) {
 
     adjust_act_gain->getPorts()[(int)Arm::ports_id::OP_0]->connect(ros_adjust_act_gain->getPorts()[(int)ROSUnit_SetBoolClnt::ports_id::IP_0]);
     original_act_gain->getPorts()[(int)Disarm::ports_id::OP_0]->connect(ros_adjust_act_gain->getPorts()[(int)ROSUnit_SetBoolClnt::ports_id::IP_0]);
+
+    correct_biases->getPorts()[(int)Arm::ports_id::OP_0]->connect(ros_correct_biases->getPorts()[(int)ROSUnit_SetBoolClnt::ports_id::IP_0]);
 
     //*************Setting Flight Elements*************
     #ifdef SMALL_HEXA
@@ -441,6 +449,8 @@ int main(int argc, char** argv) {
     testing_pipeline.addElement((MissionElement*)rec_hover_thrust);
     testing_pipeline.addElement((MissionElement*)&wait_100ms);
     testing_pipeline.addElement((MissionElement*)adjust_act_gain);
+    testing_pipeline.addElement((MissionElement*)&wait_1s);
+    testing_pipeline.addElement((MissionElement*)correct_biases);
     testing_pipeline.addElement((MissionElement*)&wait_1s);
 
     testing_pipeline.addElement((MissionElement*)start_trajectory);
