@@ -30,8 +30,8 @@ const float TAKE_OFF_HEIGHT = 1.0;
 const float LAND_HEIGHT = -0.01;
 
 //#define STORE_KF_BIAS
-//#define TRAJ_TEST
-#define SLAM_TEST
+#define TRAJ_TEST
+//#define SLAM_TEST
 //#define AUTO_TEST
 #define TESTING
 //#define BIG_HEXA
@@ -112,6 +112,11 @@ int main(int argc, char** argv) {
                                                             ROSUnit_msg_type::ROSUnit_Bool, 
                                                             "kf_freeze_bias");
     #endif
+
+    ROSUnit* ros_adjust_act_gain = ROSUnit_Factory_main.CreateROSUnit(ROSUnit_tx_rx_type::Client,
+                                                            ROSUnit_msg_type::ROSUnit_Bool, 
+                                                            "use_adjusted_act_gain");
+
     
 //     //*****************Flight Elements*************
 
@@ -152,6 +157,9 @@ int main(int argc, char** argv) {
     MissionElement* set_height_offset = new Arm(); 
     MissionElement* send_current_pos_ref_opti = new Arm(); 
     MissionElement* send_current_pos_ref_slam = new Arm(); 
+
+    MissionElement* adjust_act_gain = new Arm();
+    MissionElement* original_act_gain = new Disarm();
 
     #ifdef STORE_KF_BIAS
     MissionElement* freeze_kf_bias = new Arm(); 
@@ -197,6 +205,9 @@ int main(int argc, char** argv) {
     freeze_kf_bias->getPorts()[(int)Arm::ports_id::OP_0]->connect(ros_kf_freeze_bias_clnt->getPorts()[(int)ROSUnit_EmptyClnt::ports_id::IP_0]);
     #endif
     //absolute_zero_Z_relative_waypoint->connect(ros_set_path_clnt);
+
+    adjust_act_gain->getPorts()[(int)Arm::ports_id::OP_0]->connect(ros_adjust_act_gain->getPorts()[(int)ROSUnit_SetBoolClnt::ports_id::IP_0]);
+    original_act_gain->getPorts()[(int)Disarm::ports_id::OP_0]->connect(ros_adjust_act_gain->getPorts()[(int)ROSUnit_SetBoolClnt::ports_id::IP_0]);
 
     //*************Setting Flight Elements*************
     #ifdef SMALL_HEXA
@@ -428,6 +439,10 @@ int main(int argc, char** argv) {
 
     #ifdef TRAJ_TEST
     testing_pipeline.addElement((MissionElement*)rec_hover_thrust);
+    testing_pipeline.addElement((MissionElement*)&wait_100ms);
+    testing_pipeline.addElement((MissionElement*)adjust_act_gain);
+    testing_pipeline.addElement((MissionElement*)&wait_1s);
+
     testing_pipeline.addElement((MissionElement*)start_trajectory);
     testing_pipeline.addElement((MissionElement*)user_command);
     #endif

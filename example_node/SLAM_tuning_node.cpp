@@ -26,8 +26,8 @@
 #include "HEAR_ROS_BRIDGE/ROSUnit_RestNormSettingsClnt.hpp"
 #include "HEAR_ROS_BRIDGE/ROSUnit_ControlOutputSubscriber.hpp"
 
-#define MRFT_POS_X
-//#define MRFT_POS_Y
+//#define MRFT_POS_X
+#define MRFT_POS_Y
 //#define MRFT_POS_Z
 ////////////////////////////////////// increase relay amplitude in Y
 #define MRFT_SLAM 
@@ -38,7 +38,7 @@
 const float SLAM_FREQ = 90.0;
 const float KF_FREQ = 200.0;
 const float OPTI_FREQ = 90.0;
-const float TAKE_OFF_HEIGHT = 1.2;
+const float TAKE_OFF_HEIGHT = 1.3;
 const float LAND_HEIGHT = -0.01;
 
 
@@ -105,6 +105,10 @@ int main(int argc, char** argv) {
                                                                       "kf_switch");    
 #endif
 
+    ROSUnit* ros_rec_hover_thrust = ROSUnit_Factory_main.CreateROSUnit(ROSUnit_tx_rx_type::Client,
+                                                            ROSUnit_msg_type::ROSUnit_Bool, 
+                                                            "record_hover_thrust");
+
     ROSUnit* ros_flight_command = ROSUnit_Factory_main.CreateROSUnit(ROSUnit_tx_rx_type::Server,
                                                                     ROSUnit_msg_type::ROSUnit_Empty,
                                                                     "flight_command");//TODO: Change to user_command
@@ -117,6 +121,11 @@ int main(int argc, char** argv) {
 	ROSUnit* ros_send_slam_curr_pos = ROSUnit_Factory_main.CreateROSUnit(ROSUnit_tx_rx_type::Client,
                                                                     ROSUnit_msg_type::ROSUnit_Empty,
                                                                     "send_curr_pos_slam");
+
+    ROSUnit* ros_adjust_act_gain = ROSUnit_Factory_main.CreateROSUnit(ROSUnit_tx_rx_type::Client,
+                                                            ROSUnit_msg_type::ROSUnit_Bool, 
+                                                            "use_adjusted_act_gain");
+
 
 //     //*****************Flight Elements*************
 
@@ -181,6 +190,10 @@ int main(int argc, char** argv) {
     MissionElement* send_curr_slam_ref = new Arm();
     MissionElement* send_curr_opti_ref = new Arm();
 
+    MissionElement* rec_hover_thrust = new Arm();
+    MissionElement* adjust_act_gain = new Arm();
+    MissionElement* original_act_gain = new Disarm();
+
     //******************Connections***************
     update_controller_pid_x->getPorts()[(int)UpdateController::ports_id::OP_0]->connect(ros_updt_ctr->getPorts()[(int)ROSUnit_UpdateControllerClnt::ports_id::IP_0_PID]);
     update_controller_pid_y->getPorts()[(int)UpdateController::ports_id::OP_0]->connect(ros_updt_ctr->getPorts()[(int)ROSUnit_UpdateControllerClnt::ports_id::IP_0_PID]);
@@ -241,6 +254,10 @@ int main(int argc, char** argv) {
     change_to_kf_rate->getPorts()[(int)SwitchTrigger::ports_id::OP_0]->connect(ros_outer_rate_client->getPorts()[(int)ROSUnit_SetFloatClnt::ports_id::IP_0]);
     change_to_opti_rate->getPorts()[(int)SwitchTrigger::ports_id::OP_0]->connect(ros_outer_rate_client->getPorts()[(int)ROSUnit_SetFloatClnt::ports_id::IP_0]);
     #endif
+
+    rec_hover_thrust->getPorts()[(int)Arm::ports_id::OP_0]->connect(ros_rec_hover_thrust->getPorts()[(int)ROSUnit_SetBoolClnt::ports_id::IP_0]);
+    adjust_act_gain->getPorts()[(int)Arm::ports_id::OP_0]->connect(ros_adjust_act_gain->getPorts()[(int)ROSUnit_SetBoolClnt::ports_id::IP_0]);
+    original_act_gain->getPorts()[(int)Disarm::ports_id::OP_0]->connect(ros_adjust_act_gain->getPorts()[(int)ROSUnit_SetBoolClnt::ports_id::IP_0]);
 
     //*************Setting Flight Elements*************
 
@@ -319,10 +336,10 @@ int main(int argc, char** argv) {
 
 #ifdef MRFT_POS_Y
     ((UpdateController*)update_controller_mrft_y)->mrft_data.beta = -0.735;
-    ((UpdateController*)update_controller_mrft_y)->mrft_data.relay_amp = 1.5;
+    ((UpdateController*)update_controller_mrft_y)->mrft_data.relay_amp = 2.0;
     ((UpdateController*)update_controller_mrft_y)->mrft_data.bias = 0.0;
     ((UpdateController*)update_controller_mrft_y)->mrft_data.no_switch_delay_in_ms = 100;
-    ((UpdateController*)update_controller_mrft_y)->mrft_data.num_of_peak_conf_samples = 20;
+    ((UpdateController*)update_controller_mrft_y)->mrft_data.num_of_peak_conf_samples = 24;
     ((UpdateController*)update_controller_mrft_y)->mrft_data.id = block_id::MRFT_Y;
 #endif
 
@@ -423,10 +440,17 @@ int main(int argc, char** argv) {
     mrft_pipeline.addElement((MissionElement*)&wait_100ms);
     mrft_pipeline.addElement((MissionElement*)set_vo_offset);
     mrft_pipeline.addElement((MissionElement*)arm_motors);
- 
+
     mrft_pipeline.addElement((MissionElement*)user_command);
     mrft_pipeline.addElement((MissionElement*)arm_motors);
     mrft_pipeline.addElement((MissionElement*)take_off);
+
+    mrft_pipeline.addElement((MissionElement*)user_command);
+    mrft_pipeline.addElement((MissionElement*)rec_hover_thrust);
+    mrft_pipeline.addElement((MissionElement*)&wait_100ms);
+    mrft_pipeline.addElement((MissionElement*)adjust_act_gain);
+    mrft_pipeline.addElement((MissionElement*)&wait_1s);
+
 
 //    mrft_pipeline.addElement((MissionElement*)&wait_5s);
 
