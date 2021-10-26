@@ -31,7 +31,7 @@ const float LAND_HEIGHT = -0.01;
 
 //#define STORE_KF_BIAS
 #define TRAJ_TEST
-//#define SLAM_TEST
+#define SLAM_TEST
 //#define AUTO_TEST
 #define TESTING
 //#define BIG_HEXA
@@ -283,27 +283,27 @@ int main(int argc, char** argv) {
     ((UpdateController*)update_controller_pid_yaw_rate)->pid_data.id = block_id::PID_YAW_RATE;
     
     #ifdef SLAM_TEST
-    ((UpdateController*)update_pid_slam_x)->pid_data.kp = 3.35; //0.311; //0.51639 * 0.8;
+    ((UpdateController*)update_pid_slam_x)->pid_data.kp = 7.64; //0.311; //0.51639 * 0.8;
     ((UpdateController*)update_pid_slam_x)->pid_data.ki = 0.0;
-    ((UpdateController*)update_pid_slam_x)->pid_data.kd = 1.63; //0.151; //0.21192 * 0.8;
+    ((UpdateController*)update_pid_slam_x)->pid_data.kd = 4.086; //0.151; //0.21192 * 0.8;
     ((UpdateController*)update_pid_slam_x)->pid_data.kdd = 0.0;
     ((UpdateController*)update_pid_slam_x)->pid_data.anti_windup = 0;
     ((UpdateController*)update_pid_slam_x)->pid_data.en_pv_derivation = 1;
     ((UpdateController*)update_pid_slam_x)->pid_data.dt = (float)1.0/120.0;
     ((UpdateController*)update_pid_slam_x)->pid_data.id = block_id::PID_X;
 
-    ((UpdateController*)update_pid_slam_y)->pid_data.kp = 4.28; //0.332;// 0.6714;// 0.51639 * 0.8;
+    ((UpdateController*)update_pid_slam_y)->pid_data.kp = 8.695; //0.332;// 0.6714;// 0.51639 * 0.8;
     ((UpdateController*)update_pid_slam_y)->pid_data.ki = 0.0;
-    ((UpdateController*)update_pid_slam_y)->pid_data.kd =  2.086; //0.161; //-0.2440;// * 0.8;
+    ((UpdateController*)update_pid_slam_y)->pid_data.kd =  4.65; //0.161; //-0.2440;// * 0.8;
     ((UpdateController*)update_pid_slam_y)->pid_data.kdd = 0.0;
     ((UpdateController*)update_pid_slam_y)->pid_data.anti_windup = 0;
     ((UpdateController*)update_pid_slam_y)->pid_data.en_pv_derivation = 1;
     ((UpdateController*)update_pid_slam_y)->pid_data.dt = (float)1.0/120.0;
     ((UpdateController*)update_pid_slam_y)->pid_data.id = block_id::PID_Y;
 
-    ((UpdateController*)update_pid_slam_z)->pid_data.kp = 13.8; //0.454*0.9; 
+    ((UpdateController*)update_pid_slam_z)->pid_data.kp = 13.73; //0.454*0.9; 
     ((UpdateController*)update_pid_slam_z)->pid_data.ki = 0.0; 
-    ((UpdateController*)update_pid_slam_z)->pid_data.kd = 6.0; //0.197*0.9; 
+    ((UpdateController*)update_pid_slam_z)->pid_data.kd = 4.8; //0.197*0.9; 
     ((UpdateController*)update_pid_slam_z)->pid_data.kdd = 0.0;
     ((UpdateController*)update_pid_slam_z)->pid_data.anti_windup = 0;
     ((UpdateController*)update_pid_slam_z)->pid_data.en_pv_derivation = 1;
@@ -436,6 +436,14 @@ int main(int argc, char** argv) {
     testing_pipeline.addElement((MissionElement*)user_command);
     #endif
 
+    testing_pipeline.addElement((MissionElement*)rec_hover_thrust);
+    testing_pipeline.addElement((MissionElement*)&wait_100ms);
+    testing_pipeline.addElement((MissionElement*)adjust_act_gain);
+    testing_pipeline.addElement((MissionElement*)&wait_5s);
+    testing_pipeline.addElement((MissionElement*)correct_biases);
+    testing_pipeline.addElement((MissionElement*)&wait_1s);
+    testing_pipeline.addElement((MissionElement*)user_command);
+
     #ifdef SLAM_TEST
     testing_pipeline.addElement((MissionElement*)update_pid_slam_x);
     testing_pipeline.addElement((MissionElement*)update_pid_slam_y);
@@ -446,12 +454,6 @@ int main(int argc, char** argv) {
     #endif
 
     #ifdef TRAJ_TEST
-    testing_pipeline.addElement((MissionElement*)rec_hover_thrust);
-    testing_pipeline.addElement((MissionElement*)&wait_100ms);
-    testing_pipeline.addElement((MissionElement*)adjust_act_gain);
-    testing_pipeline.addElement((MissionElement*)&wait_1s);
-    testing_pipeline.addElement((MissionElement*)correct_biases);
-    testing_pipeline.addElement((MissionElement*)&wait_1s);
 
     testing_pipeline.addElement((MissionElement*)start_trajectory);
     testing_pipeline.addElement((MissionElement*)user_command);

@@ -27,9 +27,12 @@
 #include "HEAR_ROS_BRIDGE/ROSUnit_ControlOutputSubscriber.hpp"
 
 //#define MRFT_POS_X
-#define MRFT_POS_Y
+//#define MRFT_POS_Y
 //#define MRFT_POS_Z
-////////////////////////////////////// increase relay amplitude in Y
+
+#define MRFT_ATT_ROLL
+#define MRFT_ATT_PITCH
+
 #define MRFT_SLAM 
 //#define KF
 
@@ -93,6 +96,18 @@ int main(int argc, char** argv) {
                                                                       "mrft_switch_z");
 #endif
 
+#ifdef  MRFT_ATT_ROLL                                                          
+    ROSUnit* ros_mrft_trigger_roll = ROSUnit_Factory_main.CreateROSUnit(ROSUnit_tx_rx_type::Client,
+                                                                      ROSUnit_msg_type::ROSUnit_Float,
+                                                                      "mrft_switch_roll");
+#endif
+
+#ifdef  MRFT_ATT_PITCH                                                          
+    ROSUnit* ros_mrft_trigger_pitch = ROSUnit_Factory_main.CreateROSUnit(ROSUnit_tx_rx_type::Client,
+                                                                      ROSUnit_msg_type::ROSUnit_Float,
+                                                                      "mrft_switch_pitch");
+#endif
+
 #ifdef MRFT_SLAM
     ROSUnit* ros_slam_sw_trig = ROSUnit_Factory_main.CreateROSUnit(ROSUnit_tx_rx_type::Client,
                                                                       ROSUnit_msg_type::ROSUnit_Bool,
@@ -153,6 +168,18 @@ int main(int argc, char** argv) {
     MissionElement* update_controller_mrft_z = new UpdateController();
     MissionElement* mrft_switch_on_z=new SwitchTrigger(1);
     MissionElement* mrft_switch_off_z=new SwitchTrigger(0);
+    #endif
+
+    #ifdef MRFT_ATT_ROLL
+    MissionElement* update_controller_mrft_roll = new UpdateController();
+    MissionElement* mrft_switch_on_roll = new SwitchTrigger(1);
+    MissionElement* mrft_switch_off_roll = new SwitchTrigger(0);
+    #endif
+
+    #ifdef MRFT_ATT_PITCH
+    MissionElement* update_controller_mrft_pitch = new UpdateController();
+    MissionElement* mrft_switch_on_pitch = new SwitchTrigger(1);
+    MissionElement* mrft_switch_off_pitch = new SwitchTrigger(0);
     #endif
 
     #ifdef MRFT_SLAM
@@ -219,6 +246,18 @@ int main(int argc, char** argv) {
     update_controller_mrft_z->getPorts()[(int)UpdateController::ports_id::OP_0]->connect(ros_updt_ctr->getPorts()[(int)ROSUnit_UpdateControllerClnt::ports_id::IP_1_MRFT]);
     mrft_switch_on_z->getPorts()[(int)SwitchTrigger::ports_id::OP_0]->connect(ros_mrft_trigger_z->getPorts()[(int)ROSUnit_SetFloatClnt::ports_id::IP_0]);
     mrft_switch_off_z->getPorts()[(int)SwitchTrigger::ports_id::OP_0]->connect(ros_mrft_trigger_z->getPorts()[(int)ROSUnit_SetFloatClnt::ports_id::IP_0]);   
+    #endif
+
+    #ifdef MRFT_ATT_ROLL
+    update_controller_mrft_roll->getPorts()[(int)UpdateController::ports_id::OP_0]->connect(ros_updt_ctr->getPorts()[(int)ROSUnit_UpdateControllerClnt::ports_id::IP_1_MRFT]);
+    mrft_switch_on_roll->getPorts()[(int)SwitchTrigger::ports_id::OP_0]->connect(ros_mrft_trigger_roll->getPorts()[(int)ROSUnit_SetFloatClnt::ports_id::IP_0]);
+    mrft_switch_off_roll->getPorts()[(int)SwitchTrigger::ports_id::OP_0]->connect(ros_mrft_trigger_roll->getPorts()[(int)ROSUnit_SetFloatClnt::ports_id::IP_0]);   
+    #endif
+
+    #ifdef MRFT_ATT_PITCH
+    update_controller_mrft_pitch->getPorts()[(int)UpdateController::ports_id::OP_0]->connect(ros_updt_ctr->getPorts()[(int)ROSUnit_UpdateControllerClnt::ports_id::IP_1_MRFT]);
+    mrft_switch_on_pitch->getPorts()[(int)SwitchTrigger::ports_id::OP_0]->connect(ros_mrft_trigger_pitch->getPorts()[(int)ROSUnit_SetFloatClnt::ports_id::IP_0]);
+    mrft_switch_off_pitch->getPorts()[(int)SwitchTrigger::ports_id::OP_0]->connect(ros_mrft_trigger_pitch->getPorts()[(int)ROSUnit_SetFloatClnt::ports_id::IP_0]);
     #endif
 
     #ifdef MRFT_SLAM
@@ -351,6 +390,20 @@ int main(int argc, char** argv) {
     ((UpdateController*)update_controller_mrft_z)->mrft_data.id = block_id::MRFT_Z;
 #endif
 
+#ifdef MRFT_ATT_ROLL
+    ((UpdateController*)update_controller_mrft_roll)->mrft_data.beta = -0.73;
+    ((UpdateController*)update_controller_mrft_roll)->mrft_data.relay_amp = 0.04;
+    ((UpdateController*)update_controller_mrft_roll)->mrft_data.bias = 0.0;
+    ((UpdateController*)update_controller_mrft_roll)->mrft_data.id = block_id::MRFT_ROLL;
+#endif
+
+#ifdef MRFT_ATT_PITCH
+    ((UpdateController*)update_controller_mrft_pitch)->mrft_data.beta = -0.73;
+    ((UpdateController*)update_controller_mrft_pitch)->mrft_data.relay_amp = 0.04;
+    ((UpdateController*)update_controller_mrft_pitch)->mrft_data.bias = 0.0;
+    ((UpdateController*)update_controller_mrft_pitch)->mrft_data.id = block_id::MRFT_PITCH;
+#endif
+
 #ifdef MRFT_SLAM
     ((UpdateController*)update_controller_pid_slam_x)->pid_data.kp = 3.35;
     ((UpdateController*)update_controller_pid_slam_x)->pid_data.ki = 0.0;
@@ -400,11 +453,8 @@ int main(int argc, char** argv) {
     mrft_pipeline.addElement((MissionElement*)update_controller_pid_y);
     mrft_pipeline.addElement((MissionElement*)update_controller_pid_z);
     mrft_pipeline.addElement((MissionElement*)update_controller_pid_roll);
-    mrft_pipeline.addElement((MissionElement*)&wait_100ms);
     mrft_pipeline.addElement((MissionElement*)update_controller_pid_pitch);
-    mrft_pipeline.addElement((MissionElement*)&wait_100ms);
     mrft_pipeline.addElement((MissionElement*)update_controller_pid_yaw);
-    mrft_pipeline.addElement((MissionElement*)&wait_100ms);
     mrft_pipeline.addElement((MissionElement*)update_controller_pid_yaw_rate);
     mrft_pipeline.addElement((MissionElement*)&wait_100ms);
 
@@ -420,16 +470,12 @@ int main(int argc, char** argv) {
     mrft_pipeline.addElement((MissionElement*)update_controller_mrft_z);
     #endif
 
-    #ifdef PID_X_SLAM
-    mrft_pipeline.addElement((MissionElement*)update_controller_pid_slam_x);
+    #ifdef MRFT_ATT_ROLL
+    mrft_pipeline.addElement((MissionElement*)update_controller_mrft_roll);
     #endif
 
-    #ifdef PID_Y_SLAM
-    mrft_pipeline.addElement((MissionElement*)update_controller_pid_slam_y);
-    #endif
-
-    #ifdef PID_Z_SLAM
-    mrft_pipeline.addElement((MissionElement*)update_controller_pid_slam_z);
+    #ifdef MRFT_ATT_PITCH
+    mrft_pipeline.addElement((MissionElement*)update_controller_mrft_pitch);
     #endif
 
     mrft_pipeline.addElement((MissionElement*)set_height_offset); //TODO: (CHECK Desc) Set a constant height command/reference based on the current pos
@@ -558,6 +604,24 @@ int main(int argc, char** argv) {
         mrft_pipeline.addElement((MissionElement*)kf_switch_off);
         mrft_pipeline.addElement((MissionElement*)change_to_opti_rate);
         #endif
+    #endif
+
+    #ifdef MRFT_ATT_ROLL
+    mrft_pipeline.addElement((MissionElement*)user_command);
+    mrft_pipeline.addElement((MissionElement*)mrft_switch_on_roll);
+
+    mrft_pipeline.addElement((MissionElement*)user_command);
+    mrft_pipeline.addElement((MissionElement*)send_curr_opti_ref);
+    mrft_pipeline.addElement((MissionElement*)mrft_switch_off_roll);
+    #endif
+
+    #ifdef MRFT_ATT_PITCH
+    mrft_pipeline.addElement((MissionElement*)user_command);
+    mrft_pipeline.addElement((MissionElement*)mrft_switch_on_pitch);
+
+    mrft_pipeline.addElement((MissionElement*)user_command);
+    mrft_pipeline.addElement((MissionElement*)send_curr_opti_ref);
+    mrft_pipeline.addElement((MissionElement*)mrft_switch_off_pitch);
     #endif
 
     mrft_pipeline.addElement((MissionElement*)user_command);
