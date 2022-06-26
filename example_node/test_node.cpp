@@ -12,6 +12,8 @@
 #include "HEAR_mission/SetHeightOffset.hpp"
 #include "HEAR_mission/ResetController.hpp"
 #include "HEAR_mission/SwitchTrigger.hpp"
+#include "HEAR_mission/ConstantUpdate.hpp"
+#include "HEAR_mission/CallHeartbeat.hpp"
 #include "HEAR_mission/SetRelativeWaypoint.hpp"
 #include "HEAR_mission/SetAbsoluteWaypoint.hpp"
 #include "HEAR_mission/UpdateController.hpp"
@@ -22,12 +24,26 @@
 //
 #include "HEAR_ROS_BRIDGE/ROSUnit_InfoSubscriber.hpp"
 #include "HEAR_ROS_BRIDGE/ROSUnit_Factory.hpp"
+#include "HEAR_ROS_BRIDGE/ROSUnit_EmptyPub.hpp"
 #include "HEAR_ROS_BRIDGE/ROSUnit_RestNormSettingsClnt.hpp"
 #include "HEAR_ROS_BRIDGE/ROSUnit_ControlOutputSubscriber.hpp"
 
 
 const float TAKE_OFF_HEIGHT = 1.0;
 const float LAND_HEIGHT = -0.01;
+
+const float GRAV = 9.8;
+const float HOV_THRUST = 0.4;
+const float THRUSTtoGRAV = HOV_THRUST/GRAV;
+const float SCALE_GRAV = 1.0/GRAV;
+
+const float YAW_SAT_VALUE = 0.87;
+
+const float SAT_XY_VALUE = 0.87;
+const float SAT_Z_VALUE = 22;
+const float BIAS_Z_VALUE = 9.8;
+
+const double HEARTBEAT_RATE = 10;
 
 //#define STORE_KF_BIAS
 //#define TRAJ_TEST
@@ -81,6 +97,32 @@ int main(int argc, char** argv) {
     ROSUnit* ros_land_client = ROSUnit_Factory_main.CreateROSUnit(ROSUnit_tx_rx_type::Client,
                                                                       ROSUnit_msg_type::ROSUnit_Float,
                                                                       "land");
+    
+    /// HAZEM/////////////////////////
+    ROSUnit* ros_scalegravity_client = ROSUnit_Factory_main.CreateROSUnit(ROSUnit_tx_rx_type::Client,
+                                                                      ROSUnit_msg_type::ROSUnit_Float,
+                                                                      "scale_gravity");
+    ROSUnit* ros_thrustTogravity_client = ROSUnit_Factory_main.CreateROSUnit(ROSUnit_tx_rx_type::Client,
+                                                                      ROSUnit_msg_type::ROSUnit_Float,
+                                                                      "thrust_to_gravity");
+    ROSUnit* ros_yaw_sat_client = ROSUnit_Factory_main.CreateROSUnit(ROSUnit_tx_rx_type::Client,
+                                                                      ROSUnit_msg_type::ROSUnit_Float,
+                                                                      "yaw_saturation");
+    ROSUnit* ros_xy_sat_client = ROSUnit_Factory_main.CreateROSUnit(ROSUnit_tx_rx_type::Client,
+                                                                      ROSUnit_msg_type::ROSUnit_Float,
+                                                                      "xy_saturation");
+    ROSUnit* ros_z_sat_client = ROSUnit_Factory_main.CreateROSUnit(ROSUnit_tx_rx_type::Client,
+                                                                      ROSUnit_msg_type::ROSUnit_Float,
+                                                                      "z_saturation");
+    ROSUnit* ros_z_bias_client = ROSUnit_Factory_main.CreateROSUnit(ROSUnit_tx_rx_type::Client,
+                                                                      ROSUnit_msg_type::ROSUnit_Float,
+                                                                      "z_bias");
+    
+    ROSUnit* ros_heartbeat = ROSUnit_Factory_main.CreateROSUnit(ROSUnit_tx_rx_type::Publisher,
+                                                                      ROSUnit_msg_type::ROSUnit_Empty,
+                                                                      "heartbeat");
+    /// HAZEM/////////////////////////
+    
     ROSUnit* ros_start_traj_clnt = ROSUnit_Factory_main.CreateROSUnit(ROSUnit_tx_rx_type::Client,
                                                             ROSUnit_msg_type::ROSUnit_Bool, 
                                                             "start_trajectory");
@@ -156,6 +198,17 @@ int main(int argc, char** argv) {
     MissionElement* take_off = new SwitchTrigger(TAKE_OFF_HEIGHT);
     MissionElement* land = new SwitchTrigger(LAND_HEIGHT);
 
+    MissionElement* scale_gravity = new ConstantUpdate(SCALE_GRAV);
+    MissionElement* thrustTogravity = new ConstantUpdate(THRUSTtoGRAV);
+
+    MissionElement* yaw_saturation_value = new ConstantUpdate(YAW_SAT_VALUE);
+
+    MissionElement* saturation_xy = new ConstantUpdate(SAT_XY_VALUE);
+    MissionElement* saturation_z = new ConstantUpdate(SAT_Z_VALUE);
+    MissionElement* bias_z = new ConstantUpdate(BIAS_Z_VALUE);
+
+    MissionElement* heartbeat = new CallHeartbeat(HEARTBEAT_RATE);
+
     MissionElement* user_command = new UserCommand();
 
     MissionElement* set_height_offset = new Arm(); 
@@ -207,6 +260,18 @@ int main(int argc, char** argv) {
     send_current_pos_ref_slam->getPorts()[(int)Arm::ports_id::OP_0]->connect(ros_send_slam_curr_pos->getPorts()[(int)ROSUnit_EmptyClnt::ports_id::IP_0]);
     take_off->getPorts()[(int)SwitchTrigger::ports_id::OP_0]->connect(ros_take_off_client->getPorts()[(int)ROSUnit_SetFloatClnt::ports_id::IP_0]);
     land->getPorts()[(int)SwitchTrigger::ports_id::OP_0]->connect(ros_land_client->getPorts()[(int)ROSUnit_SetFloatClnt::ports_id::IP_0]);
+
+    /// HAZEM/////////////////////////
+    scale_gravity->getPorts()[(int)ConstantUpdate::ports_id::OP_0]->connect(ros_scalegravity_client->getPorts()[(int)ROSUnit_SetFloatClnt::ports_id::IP_0]);
+    thrustTogravity->getPorts()[(int)ConstantUpdate::ports_id::OP_0]->connect(ros_thrustTogravity_client->getPorts()[(int)ROSUnit_SetFloatClnt::ports_id::IP_0]);
+    yaw_saturation_value->getPorts()[(int)ConstantUpdate::ports_id::OP_0]->connect(ros_yaw_sat_client->getPorts()[(int)ROSUnit_SetFloatClnt::ports_id::IP_0]);
+    saturation_xy->getPorts()[(int)ConstantUpdate::ports_id::OP_0]->connect(ros_xy_sat_client->getPorts()[(int)ROSUnit_SetFloatClnt::ports_id::IP_0]);
+    saturation_z->getPorts()[(int)ConstantUpdate::ports_id::OP_0]->connect(ros_z_sat_client->getPorts()[(int)ROSUnit_SetFloatClnt::ports_id::IP_0]);
+    bias_z->getPorts()[(int)ConstantUpdate::ports_id::OP_0]->connect(ros_z_bias_client->getPorts()[(int)ROSUnit_SetFloatClnt::ports_id::IP_0]);
+
+    heartbeat->getPorts()[(int)CallHeartbeat::ports_id::OP_0]->connect(ros_heartbeat->getPorts()[(int)ROSUnit_EmptyPub::ports_id::IP_0]);
+    /// HAZEM/////////////////////////
+
     #ifdef STORE_KF_BIAS
     freeze_kf_bias->getPorts()[(int)Arm::ports_id::OP_0]->connect(ros_kf_freeze_bias_clnt->getPorts()[(int)ROSUnit_EmptyClnt::ports_id::IP_0]);
     #endif
@@ -403,6 +468,15 @@ int main(int argc, char** argv) {
     testing_pipeline.addElement((MissionElement*)update_controller_pid_pitch);
     testing_pipeline.addElement((MissionElement*)update_controller_pid_yaw);
     testing_pipeline.addElement((MissionElement*)update_controller_pid_yaw_rate);
+
+    testing_pipeline.addElement((MissionElement*)scale_gravity);
+    testing_pipeline.addElement((MissionElement*)thrustTogravity);
+    testing_pipeline.addElement((MissionElement*)yaw_saturation_value);
+    testing_pipeline.addElement((MissionElement*)saturation_xy);
+    testing_pipeline.addElement((MissionElement*)saturation_z);
+    testing_pipeline.addElement((MissionElement*)bias_z);
+
+    testing_pipeline.addElement((MissionElement*)heartbeat);
 
     testing_pipeline.addElement((MissionElement*)set_height_offset); //TODO: (CHECK Desc) Set a constant height command/reference based on the current pos
     testing_pipeline.addElement((MissionElement*)&wait_1s);
