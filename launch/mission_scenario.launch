@@ -1,0 +1,4 @@
+<launch>
+    <node pkg="hear_navio_mc_example" type="mc_standard_node" name="standard_MC_node" required="true" output="screen"/>
+    <rosparam file="$(find hear_navio_mc_example)/config/parameters.yaml" />
+</launch>
