@@ -16,7 +16,6 @@ catkin_package(
     roscpp
 )
 
-add_subdirectory(HEAR2 HEAR2/build)
 
 include_directories(
   ${catkin_INCLUDE_DIRS}
